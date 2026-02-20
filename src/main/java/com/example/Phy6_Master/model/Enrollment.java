@@ -10,7 +10,9 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "enrollments")
+@Table(name = "enrollments", uniqueConstraints = {
+    @UniqueConstraint(columnNames = {"student_id", "course_id"})
+})
 public class Enrollment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -24,10 +26,13 @@ public class Enrollment {
     @JoinColumn(name = "course_id", nullable = false)
     private Course course;
 
+    @Column(nullable = false, updatable = false)
     private LocalDateTime enrollmentDate;
 
     @PrePersist
     protected void onCreate() {
-        enrollmentDate = LocalDateTime.now();
+        if (enrollmentDate == null) {
+            enrollmentDate = LocalDateTime.now();
+        }
     }
 }

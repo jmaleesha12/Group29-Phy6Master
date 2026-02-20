@@ -4,6 +4,7 @@ import com.example.Phy6_Master.model.Course;
 import com.example.Phy6_Master.model.Enrollment;
 import com.example.Phy6_Master.model.LearningMaterial;
 import com.example.Phy6_Master.model.User;
+import com.example.Phy6_Master.repository.CourseRepository;
 import com.example.Phy6_Master.repository.EnrollmentRepository;
 import com.example.Phy6_Master.repository.LearningMaterialRepository;
 import com.example.Phy6_Master.repository.UserRepository;
@@ -25,9 +26,18 @@ public class StudentService {
     @Autowired
     private LearningMaterialRepository learningMaterialRepository;
 
+    @Autowired
+    private CourseRepository courseRepository;
+
+    /**
+     * Retrieves all courses enrolled by a student
+     * @param studentId the ID of the student
+     * @return list of courses
+     * @throws IllegalArgumentException if student not found
+     */
     public List<Course> getEnrolledCourses(Long studentId) {
         User student = userRepository.findById(studentId)
-                .orElseThrow(() -> new RuntimeException("Student not found"));
+                .orElseThrow(() -> new IllegalArgumentException("Student not found with ID: " + studentId));
 
         List<Enrollment> enrollments = enrollmentRepository.findByStudent(student);
         return enrollments.stream()
@@ -35,12 +45,15 @@ public class StudentService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Retrieves learning materials for a specific course
+     * @param courseId the ID of the course
+     * @return list of learning materials
+     * @throws IllegalArgumentException if course not found
+     */
     public List<LearningMaterial> getCourseMaterials(Long courseId) {
-        // ideally check if student is enrolled in this course
-        Course course = new Course();
-        course.setId(courseId); // Minimal mock for lookup, repository handles relationship check if needed,
-        // but here we just query materials by course id.
-        // Real impl might verify enrollment first.
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new IllegalArgumentException("Course not found with ID: " + courseId));
 
         return learningMaterialRepository.findByCourse(course);
     }

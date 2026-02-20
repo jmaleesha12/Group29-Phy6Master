@@ -15,8 +15,17 @@ public class StudentController {
     @Autowired
     private StudentService studentService;
 
+    /**
+     * Get all courses enrolled by a student
+     * @param studentId the student ID (must be greater than 0)
+     * @return list of enrolled courses
+     */
     @GetMapping("/{studentId}/courses")
-    public ResponseEntity<List<Course>> getEnrolledCourses(@PathVariable Long studentId) {
+    public ResponseEntity<List<Course>> getEnrolledCourses(
+            @PathVariable(name = "studentId") Long studentId) {
+        if (studentId == null || studentId <= 0) {
+            return ResponseEntity.badRequest().build();
+        }
         List<Course> courses = studentService.getEnrolledCourses(studentId);
         return ResponseEntity.ok(courses);
     }
