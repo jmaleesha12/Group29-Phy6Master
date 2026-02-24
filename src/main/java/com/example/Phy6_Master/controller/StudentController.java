@@ -2,7 +2,6 @@ package com.example.Phy6_Master.controller;
 
 import com.example.Phy6_Master.model.Course;
 import com.example.Phy6_Master.service.StudentService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,21 +11,14 @@ import java.util.List;
 @RequestMapping("/api/student")
 public class StudentController {
 
-    @Autowired
-    private StudentService studentService;
+    private final StudentService studentService;
 
-    /**
-     * Get all courses enrolled by a student
-     * @param studentId the student ID (must be greater than 0)
-     * @return list of enrolled courses
-     */
+    public StudentController(StudentService studentService) {
+        this.studentService = studentService;
+    }
+
     @GetMapping("/{studentId}/courses")
-    public ResponseEntity<List<Course>> getEnrolledCourses(
-            @PathVariable(name = "studentId") Long studentId) {
-        if (studentId == null || studentId <= 0) {
-            return ResponseEntity.badRequest().build();
-        }
-        List<Course> courses = studentService.getEnrolledCourses(studentId);
-        return ResponseEntity.ok(courses);
+    public ResponseEntity<List<Course>> getEnrolledCourses(@PathVariable Long studentId) {
+        return ResponseEntity.ok(studentService.getEnrolledCourses(studentId));
     }
 }
