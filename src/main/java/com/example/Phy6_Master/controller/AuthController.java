@@ -69,4 +69,31 @@ public class AuthController {
                     .body(Map.of("message", "Error creating teacher account: " + exception.getMessage()));
         }
     }
-}
+
+    @PostMapping("/signup/tutor")
+    public ResponseEntity<?> signUpTutor(@Valid @RequestBody TutorSignUpRequest request) {
+        try {
+            TutorResponse response = authService.signUpAsTutor(request);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (IllegalArgumentException exception) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", exception.getMessage()));
+        } catch (Exception exception) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Error creating tutor account: " + exception.getMessage()));
+        }
+    }
+
+    @PostMapping("/signup/accountant")
+    public ResponseEntity<?> signUpAccountant(@Valid @RequestBody AccountantSignUpRequest request) {
+        try {
+            AccountantResponse response = authService.signUpAsAccountant(request);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (IllegalArgumentException exception) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", exception.getMessage()));
+        } catch (Exception exception) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Error creating accountant account: " + exception.getMessage()));
+        }
+    }

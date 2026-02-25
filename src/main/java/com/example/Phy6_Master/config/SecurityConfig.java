@@ -28,10 +28,14 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/signup").permitAll()
                         .requestMatchers("/api/auth/signup/student").permitAll()
                         .requestMatchers("/api/auth/signup/teacher").permitAll()
+                        .requestMatchers("/api/auth/signup/tutor").permitAll()
+                        .requestMatchers("/api/auth/signup/accountant").permitAll()
                         
                         // Protected endpoints - require authentication (you can add @PreAuthorize for role-based)
                         .requestMatchers("/api/students/**").permitAll() // Can be restricted with @PreAuthorize("hasRole('STUDENT')")
                         .requestMatchers("/api/teachers/**").permitAll() // Can be restricted with @PreAuthorize("hasRole('TEACHER')")
+                        .requestMatchers("/api/tutors/**").permitAll() // Can be restricted with @PreAuthorize("hasRole('TUTOR')")
+                        .requestMatchers("/api/accountants/**").permitAll() // Can be restricted with @PreAuthorize("hasRole('ACCOUNTANT')")
                         
                         // Public endpoints for courses and materials
                         .requestMatchers("/api/courses/**").permitAll()
