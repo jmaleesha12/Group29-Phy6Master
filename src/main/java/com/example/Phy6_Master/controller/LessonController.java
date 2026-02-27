@@ -15,12 +15,12 @@ public class LessonController {
     @Autowired
     private LessonService lessonService;
 
-    @PostMapping("/course/{courseId}")
+    @PostMapping("/courses/{courseId}")
     public Lesson createLesson(@PathVariable Long courseId, @RequestBody Lesson lesson) {
         return lessonService.createLesson(courseId, lesson);
     }
 
-    @GetMapping("/course/{courseId}")
+    @GetMapping("/courses/{courseId}")
     public List<Lesson> getLessonsByCourse(@PathVariable Long courseId) {
         return lessonService.getLessonsByCourseId(courseId);
     }

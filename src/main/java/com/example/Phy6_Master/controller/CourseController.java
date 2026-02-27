@@ -1,6 +1,7 @@
 package com.example.Phy6_Master.controller;
 
 import com.example.Phy6_Master.model.Course;
+import com.example.Phy6_Master.repository.EnrollmentRepository;
 import com.example.Phy6_Master.service.CourseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +15,9 @@ public class CourseController {
 
     @Autowired
     private CourseService courseService;
+
+    @Autowired
+    private EnrollmentRepository enrollmentRepository;
 
     @PostMapping
     public Course createCourse(@RequestBody Course course) {
@@ -50,5 +54,12 @@ public class CourseController {
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
+    }
+
+    @GetMapping("/{id}/enrollment-count")
+    public ResponseEntity<Long> getEnrollmentCount(@PathVariable Long id) {
+        return courseService.getCourseById(id)
+                .map(course -> ResponseEntity.ok((long) enrollmentRepository.findByCourse(course).size()))
+                .orElse(ResponseEntity.notFound().build());
     }
 }
