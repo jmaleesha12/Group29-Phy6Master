@@ -1,0 +1,117 @@
+import { useState, useEffect } from "react";
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  LayoutDashboard, BookOpen, Calendar, Settings, Search, User,
+  Menu, X, Zap, LogOut, ChevronDown
+} from "lucide-react";
+import { Input } from "@/components/ui/input";
+
+const sidebarLinks = [
+  { label: "Dashboard", icon: LayoutDashboard, path: "/student/dashboard" },
+  { label: "Resources", icon: BookOpen, path: "/student/resources" },
+  { label: "Schedule", icon: Calendar, path: "/student/schedule" },
+  { label: "Settings", icon: Settings, path: "/student/settings" },
+];
+
+export default function StudentLayout() {
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const userName = localStorage.getItem("authName") || "Student";
+  const userInitial = userName.charAt(0).toUpperCase();
+
+  useEffect(() => {
+    if (localStorage.getItem("authRole") !== "STUDENT") {
+      navigate("/signin");
+    }
+  }, [navigate]);
+
+  const handleLogout = () => {
+    localStorage.removeItem("authRole");
+    localStorage.removeItem("authName");
+    localStorage.removeItem("authUsername");
+    localStorage.removeItem("authUserId");
+    navigate("/");
+  };
+
+  return (
+    <div className="min-h-screen bg-background flex">
+      {/* Sidebar */}
+      <aside className={`fixed inset-y-0 left-0 z-40 flex flex-col border-r border-border bg-sidebar transition-all duration-300 ${sidebarOpen ? "w-60" : "w-16"}`}>
+        <div className="flex items-center gap-2 px-4 py-5 border-b border-sidebar-border">
+          <Zap className="h-6 w-6 text-sidebar-primary shrink-0" />
+          {sidebarOpen && <span className="font-display text-lg font-bold text-sidebar-foreground">Phy6 Master</span>}
+        </div>
+
+        <nav className="flex-1 overflow-y-auto py-4 px-2 space-y-1">
+          {sidebarLinks.map((link) => {
+            const active = location.pathname === link.path;
+            return (
+              <Link key={link.path} to={link.path}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
+                  ${active ? "bg-sidebar-accent text-sidebar-primary" : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"}`}>
+                <link.icon className={`h-5 w-5 shrink-0 ${active ? "text-sidebar-primary" : ""}`} />
+                {sidebarOpen && <span>{link.label}</span>}
+              </Link>
+            );
+          })}
+        </nav>
+
+        <div className="p-3 border-t border-sidebar-border">
+          <button onClick={handleLogout} className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-sidebar-foreground hover:bg-sidebar-accent/50 w-full">
+            <LogOut className="h-5 w-5 shrink-0" />
+            {sidebarOpen && <span>Sign Out</span>}
+          </button>
+        </div>
+      </aside>
+
+      {/* Main */}
+      <div className={`flex-1 flex flex-col transition-all duration-300 ${sidebarOpen ? "ml-60" : "ml-16"}`}>
+        {/* Header */}
+        <header className="sticky top-0 z-30 flex items-center justify-between gap-4 border-b border-border bg-background/80 backdrop-blur-md px-6 py-3">
+          <div className="flex items-center gap-3">
+            <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2 rounded-lg hover:bg-accent transition-colors">
+              {sidebarOpen ? <X className="h-5 w-5 text-foreground" /> : <Menu className="h-5 w-5 text-foreground" />}
+            </button>
+            <div className="relative hidden md:block">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search..." className="w-64 pl-10 bg-secondary border-border text-sm" />
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {/* Profile */}
+            <div className="relative">
+              <button onClick={() => setProfileOpen(!profileOpen)}
+                className="flex items-center gap-2 p-1.5 pr-3 rounded-lg hover:bg-accent transition-colors">
+                <div className="h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">{userInitial}</div>
+                <span className="text-sm font-medium text-foreground hidden sm:block">{userName}</span>
+                <ChevronDown className="h-3 w-3 text-muted-foreground hidden sm:block" />
+              </button>
+              <AnimatePresence>
+                {profileOpen && (
+                  <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }}
+                    className="absolute right-0 top-full mt-2 w-48 rounded-xl border border-border bg-card shadow-card p-2 z-50">
+                    <Link to="/student/settings" className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-foreground hover:bg-accent"><User className="h-4 w-4" /> Profile</Link>
+                    <Link to="/student/settings" className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-foreground hover:bg-accent"><Settings className="h-4 w-4" /> Settings</Link>
+                    <hr className="my-1 border-border" />
+                    <button onClick={handleLogout} className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-destructive hover:bg-accent w-full"><LogOut className="h-4 w-4" /> Sign Out</button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
+        </header>
+
+        {/* Content */}
+        <main className="flex-1 p-6 overflow-auto">
+          <Outlet />
+        </main>
+      </div>
+    </div>
+  );
+}
