@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@CrossOrigin(origins = "*")
 @RequestMapping("/api/auth")
 public class AuthController {
 
@@ -97,3 +96,4 @@ public class AuthController {
                     .body(Map.of("message", "Error creating accountant account: " + exception.getMessage()));
         }
     }
+}

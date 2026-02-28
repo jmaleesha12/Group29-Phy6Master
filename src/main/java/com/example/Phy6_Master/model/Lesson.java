@@ -1,7 +1,7 @@
 package com.example.Phy6_Master.model;
 
 import jakarta.persistence.*;
-
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.List;
 
 @Entity
@@ -17,6 +17,7 @@ public class Lesson {
     @Column(length = 2000)
     private String content; // Description or text content of the lesson
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "course_id", nullable = false)
     private Course course;
