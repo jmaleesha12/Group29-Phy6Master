@@ -7,7 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-//
+
 @RestController
 @RequestMapping("/api/lessons")
 public class LessonController {
@@ -15,12 +15,12 @@ public class LessonController {
     @Autowired
     private LessonService lessonService;
 
-    @PostMapping("/courses/{courseId}")
+    @PostMapping("/course/{courseId}")
     public Lesson createLesson(@PathVariable Long courseId, @RequestBody Lesson lesson) {
         return lessonService.createLesson(courseId, lesson);
     }
 
-    @GetMapping("/courses/{courseId}")
+    @GetMapping("/course/{courseId}")
     public List<Lesson> getLessonsByCourse(@PathVariable Long courseId) {
         return lessonService.getLessonsByCourseId(courseId);
     }
