@@ -19,19 +19,25 @@ public class Course {
     @JoinColumn(name = "teacher_id", nullable = true)
     private User teacher;
 
-    private String grade;
+    private String batch;
     private String subject;
+    private String type;
+
+    @Column(length = 1000)
+    private String imageUrl;
 
     public Course() {
     }
 
-    public Course(Long id, String title, String description, User teacher, String grade, String subject) {
+    public Course(Long id, String title, String description, User teacher, String batch, String subject, String type, String imageUrl) {
         this.id = id;
         this.title = title;
         this.description = description;
         this.teacher = teacher;
-        this.grade = grade;
+        this.batch = batch;
         this.subject = subject;
+        this.type = type;
+        this.imageUrl = imageUrl;
     }
 
     public Long getId() {
@@ -66,12 +72,12 @@ public class Course {
         this.teacher = teacher;
     }
 
-    public String getGrade() {
-        return grade;
+    public String getBatch() {
+        return batch;
     }
 
-    public void setGrade(String grade) {
-        this.grade = grade;
+    public void setBatch(String batch) {
+        this.batch = batch;
     }
 
     public String getSubject() {
@@ -80,5 +86,21 @@ public class Course {
 
     public void setSubject(String subject) {
         this.subject = subject;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 }

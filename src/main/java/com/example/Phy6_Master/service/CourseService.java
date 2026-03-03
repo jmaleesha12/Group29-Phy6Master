@@ -33,8 +33,10 @@ public class CourseService {
 
         course.setTitle(courseDetails.getTitle());
         course.setDescription(courseDetails.getDescription());
-        course.setGrade(courseDetails.getGrade());
+        course.setBatch(courseDetails.getBatch());
         course.setSubject(courseDetails.getSubject());
+        course.setType(courseDetails.getType());
+        course.setImageUrl(courseDetails.getImageUrl());
 
         // Assuming teacher doesn't change often, or handle separately if needed
 
