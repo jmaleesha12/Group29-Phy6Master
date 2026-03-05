@@ -15,8 +15,10 @@ export interface Course {
   title: string;
   description?: string;
   teacher?: User;
-  grade?: string;
+  batch?: string;
   subject?: string;
+  type?: string;
+  imageUrl?: string;
 }
 
 export interface TimetableSlot {
@@ -58,7 +60,7 @@ export interface Student {
   studentId: string;
   enrollmentNumber?: string;
   school?: string;
-  grade?: string;
+  batch?: string;
   address?: string;
   parentName?: string;
   parentPhoneNumber?: string;

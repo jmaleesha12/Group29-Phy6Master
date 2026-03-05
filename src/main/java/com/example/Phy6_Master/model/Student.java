@@ -1,6 +1,5 @@
 package com.example.Phy6_Master.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -11,8 +10,8 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "teachers")
-public class Teacher {
+@Table(name = "students")
+public class Student {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -22,21 +21,16 @@ public class Teacher {
     private User user;
 
     @Column(unique = true)
-    private String employeeId;
+    private String studentId;
 
-    private String email;
+    private String enrollmentNumber;
+    private String school;
+    private String batch;
+    private String address;
+    private String parentName;
+    private String parentPhoneNumber;
 
-    @JsonIgnore
-    private String password;
-
-    private String qualification;
-    private String specialization;
-    private String department;
-    private String experience;
-    private String office;
-    private String officePhoneNumber;
-
-    private LocalDateTime joiningDate;
+    private LocalDateTime enrollmentDate;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -44,8 +38,8 @@ public class Teacher {
     public void prePersist() {
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
-        if (this.joiningDate == null) {
-            this.joiningDate = LocalDateTime.now();
+        if (this.enrollmentDate == null) {
+            this.enrollmentDate = LocalDateTime.now();
         }
     }
 
