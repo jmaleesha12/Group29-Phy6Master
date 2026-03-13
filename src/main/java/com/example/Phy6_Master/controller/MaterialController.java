@@ -34,7 +34,7 @@ public class MaterialController {
     private LessonService lessonService;
 
     /**
-     * Upload a file and create a LearningMaterial linked to a lesson.
+     * Upload a file and create a LearningMaterial linked to a lesson
      */
     @PostMapping("/lessons/{lessonId}/materials/uploads")
     public ResponseEntity<LearningMaterial> uploadMaterial(
