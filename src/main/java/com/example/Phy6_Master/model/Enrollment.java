@@ -35,4 +35,8 @@ public class Enrollment {
             this.enrolledAt = LocalDateTime.now();
         }
     }
+
+    public Object getCourse() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 }

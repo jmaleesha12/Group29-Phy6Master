@@ -17,6 +17,8 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.example.Phy6_Master.dto.LessonResponse;
+
 @Service
 public class StudentService {
 
@@ -32,7 +34,7 @@ public class StudentService {
     @Autowired
     private LessonRepository lessonRepository;
 
-    public List<Course> getEnrolledCourses(Long studentId) {
+    public List<Object> getEnrolledCourses(Long studentId) {
         User student = userRepository.findById(studentId)
                 .orElseThrow(() -> new RuntimeException("Student not found"));
 
@@ -51,7 +53,7 @@ public class StudentService {
                 .orElseThrow(() -> new RuntimeException("Student not found"));
 
         boolean isEnrolled = enrollmentRepository.findByStudent(student).stream()
-                .anyMatch(e -> e.getCourse().getId().equals(courseId));
+                .anyMatch(e -> e.getCourse().equals(courseId));
 
         if (!isEnrolled) {
             throw new RuntimeException("Student is not enrolled in this course");
@@ -76,7 +78,7 @@ public class StudentService {
                 .orElseThrow(() -> new RuntimeException("Student not found"));
 
         boolean isEnrolled = enrollmentRepository.findByStudent(student).stream()
-                .anyMatch(e -> e.getCourse().getId().equals(lesson.getCourse().getId()));
+                .anyMatch(e -> e.getCourse().equals(lesson.getCourse().getId()));
 
         if (!isEnrolled) {
             throw new RuntimeException("Student is not enrolled in this course");
