@@ -15,6 +15,8 @@ import StudentClasses from "./pages/student/Classes";
 import Schedule from "./pages/student/Schedule";
 import SettingsPage from "./pages/student/Settings";
 import TeacherDashboard from "./pages/teacher/Dashboard";
+import MyCourses from "./pages/student/MyCourses";
+import CourseDetail from "./pages/student/CourseDetail";
 import ClassManagement from "./pages/teacher/ClassManagement";
 import ContentUpload from "./pages/teacher/ContentUpload";
 import Timetable from "./pages/teacher/Timetable";
@@ -48,6 +50,8 @@ const App = () => {
               <Route index element={<Navigate to="dashboard" replace />} />
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="classes" element={<StudentClasses />} />
+              <Route path="courses" element={<MyCourses />} />
+              <Route path="courses/:courseId" element={<CourseDetail />} />
               <Route path="schedule" element={<Schedule />} />
               <Route path="settings" element={<SettingsPage />} />
             </Route>
