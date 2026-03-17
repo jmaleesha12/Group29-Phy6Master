@@ -2,7 +2,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { get, post, put, del } from "@/lib/api-client";
 import type { Announcement } from "./types";
 
-/** Get all announcements for a specific course */
 export function useAnnouncementsByCourse(courseId: number | undefined) {
   return useQuery<Announcement[]>({
     queryKey: ["announcements-by-course", courseId],
@@ -11,7 +10,6 @@ export function useAnnouncementsByCourse(courseId: number | undefined) {
   });
 }
 
-/** Get all announcements created by a teacher */
 export function useAnnouncementsByTeacher(teacherId: number | undefined) {
   return useQuery<Announcement[]>({
     queryKey: ["announcements-by-teacher", teacherId],
@@ -20,7 +18,6 @@ export function useAnnouncementsByTeacher(teacherId: number | undefined) {
   });
 }
 
-/** Get all announcements for student's enrolled courses */
 export function useAnnouncementsForStudent(userId: number | undefined) {
   return useQuery<Announcement[]>({
     queryKey: ["announcements-for-student", userId],
@@ -29,7 +26,6 @@ export function useAnnouncementsForStudent(userId: number | undefined) {
   });
 }
 
-/** Get a single announcement by ID */
 export function useAnnouncements(announcementId: number | undefined) {
   return useQuery<Announcement>({
     queryKey: ["announcement", announcementId],
@@ -38,7 +34,6 @@ export function useAnnouncements(announcementId: number | undefined) {
   });
 }
 
-/** Create a new announcement */
 export function useCreateAnnouncement() {
   const queryClient = useQueryClient();
 
@@ -60,7 +55,6 @@ export function useCreateAnnouncement() {
   });
 }
 
-/** Update an existing announcement */
 export function useUpdateAnnouncement() {
   const queryClient = useQueryClient();
 
@@ -87,7 +81,6 @@ export function useUpdateAnnouncement() {
   });
 }
 
-/** Delete an announcement */
 export function useDeleteAnnouncement() {
   const queryClient = useQueryClient();
 
@@ -96,7 +89,7 @@ export function useDeleteAnnouncement() {
       return del<void>(`/api/announcements/${data.id}?teacherId=${data.teacherId}`);
     },
     onSuccess: () => {
-      // Invalidate all announcement queries
+     
       queryClient.invalidateQueries({ queryKey: ["announcements"] });
       queryClient.invalidateQueries({ queryKey: ["announcements-by-course"] });
       queryClient.invalidateQueries({ queryKey: ["announcements-by-teacher"] });
