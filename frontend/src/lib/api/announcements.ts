@@ -47,7 +47,7 @@ export function useCreateAnnouncement() {
       return post<Announcement>("/api/announcements", data);
     },
     onSuccess: (data: { courseId: any; teacherId: any; }) => {
-      // Invalidate related queries
+   
       queryClient.invalidateQueries({ queryKey: ["announcements-by-course", data.courseId] });
       queryClient.invalidateQueries({ queryKey: ["announcements-by-teacher", data.teacherId] });
       queryClient.invalidateQueries({ queryKey: ["announcements-for-student"] });
@@ -72,7 +72,7 @@ export function useUpdateAnnouncement() {
       });
     },
     onSuccess: (data: { id: any; courseId: any; teacherId: any; }) => {
-      // Invalidate related queries
+     
       queryClient.invalidateQueries({ queryKey: ["announcement", data.id] });
       queryClient.invalidateQueries({ queryKey: ["announcements-by-course", data.courseId] });
       queryClient.invalidateQueries({ queryKey: ["announcements-by-teacher", data.teacherId] });
