@@ -18,7 +18,6 @@ public class AnnouncementController {
     @Autowired
     private AnnouncementService announcementService;
 
-    // Create announcement
     @PostMapping
     public ResponseEntity<?> createAnnouncement(@RequestBody Map<String, Object> request) {
         try {
@@ -34,28 +33,24 @@ public class AnnouncementController {
         }
     }
 
-    // Get announcements for a specific course
     @GetMapping("/course/{courseId}")
     public ResponseEntity<List<AnnouncementResponse>> getAnnouncementsByCourse(@PathVariable Long courseId) {
         List<AnnouncementResponse> announcements = announcementService.getAnnouncementsByCourse(courseId);
         return ResponseEntity.ok(announcements);
     }
-
-    // Get announcements for teacher's courses
+    
     @GetMapping("/teacher/{teacherId}")
     public ResponseEntity<List<AnnouncementResponse>> getAnnouncementsByTeacher(@PathVariable Long teacherId) {
         List<AnnouncementResponse> announcements = announcementService.getAnnouncementsByTeacher(teacherId);
         return ResponseEntity.ok(announcements);
     }
 
-    // Get announcements for student's enrolled courses
     @GetMapping("/student/{userId}")
     public ResponseEntity<List<AnnouncementResponse>> getAnnouncementsForStudent(@PathVariable Long userId) {
         List<AnnouncementResponse> announcements = announcementService.getAnnouncementsForStudent(userId);
         return ResponseEntity.ok(announcements);
     }
 
-    // Get single announcement
     @GetMapping("/{id}")
     public ResponseEntity<?> getAnnouncementById(@PathVariable Long id) {
         try {
@@ -66,7 +61,6 @@ public class AnnouncementController {
         }
     }
 
-    // Update announcement
     @PutMapping("/{id}")
     public ResponseEntity<?> updateAnnouncement(@PathVariable Long id, @RequestBody Map<String, Object> request) {
         try {
@@ -81,7 +75,6 @@ public class AnnouncementController {
         }
     }
 
-    // Delete announcement
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteAnnouncement(@PathVariable Long id, @RequestParam Long teacherId) {
         try {
