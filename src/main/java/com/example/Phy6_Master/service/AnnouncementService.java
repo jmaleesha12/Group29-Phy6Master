@@ -1,6 +1,5 @@
 package com.example.Phy6_Master.service;
 
-import com.example.Phy6_Master.dto.AnnouncementResponse;
 import com.example.Phy6_Master.model.Announcement;
 import com.example.Phy6_Master.model.Course;
 import com.example.Phy6_Master.model.User;
@@ -9,8 +8,10 @@ import com.example.Phy6_Master.repository.CourseRepository;
 import com.example.Phy6_Master.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
 @Service
 public class AnnouncementService {
@@ -24,13 +25,18 @@ public class AnnouncementService {
     @Autowired
     private UserRepository userRepository;
 
-    public AnnouncementResponse createAnnouncement(Long courseId, Long teacherId, String title, String content) {
+
+    public Announcement createAnnouncement(Long courseId, Long teacherId,
+                                           String title, String content) {
+
         Course course = courseRepository.findById(courseId)
                 .orElseThrow(() -> new RuntimeException("Course not found"));
+
         User teacher = userRepository.findById(teacherId)
                 .orElseThrow(() -> new RuntimeException("Teacher not found"));
 
-        if (!course.getTeacher().getId().equals(teacherId)) {
+        // Allow if course has no teacher (legacy) or if teacher owns the course
+        if (course.getTeacher() != null && !course.getTeacher().getId().equals(teacherId)) {
             throw new RuntimeException("Teacher can only create announcements for their own courses");
         }
 
@@ -40,34 +46,33 @@ public class AnnouncementService {
         announcement.setCourse(course);
         announcement.setTeacher(teacher);
 
-        Announcement saved = announcementRepository.save(announcement);
-        return new AnnouncementResponse(saved);
+        return announcementRepository.save(announcement);
     }
 
-    public List<AnnouncementResponse> getAnnouncementsByCourse(Long courseId) {
-        return announcementRepository.findByCourseIdOrderByCreatedAtDesc(courseId)
-                .stream()
-                .map(AnnouncementResponse::new)
-                .collect(Collectors.toList());
+
+
+    public List<Announcement> getAnnouncementsByCourse(Long courseId) {
+        return announcementRepository.findByCourseIdOrderByCreatedAtDesc(courseId);
     }
 
-    public List<AnnouncementResponse> getAnnouncementsByTeacher(Long teacherId) {
-        return announcementRepository.findByTeacherIdOrderByCreatedAtDesc(teacherId)
-                .stream()
-                .map(AnnouncementResponse::new)
-                .collect(Collectors.toList());
+    public List<Announcement> getAnnouncementsByTeacher(Long teacherId) {
+        return announcementRepository.findByTeacherIdOrderByCreatedAtDesc(teacherId);
     }
+
+    public List<Announcement> getAnnouncementsForStudent(Long userId) {
+        return announcementRepository.findByEnrolledCourses(userId);
+    }
+
+    public Optional<Announcement> getAnnouncementById(Long id) {
+        return announcementRepository.findById(id);
+    }
+
     
-    public List<AnnouncementResponse> getAnnouncementsForStudent(Long userId) {
-        return announcementRepository.findByEnrolledCourses(userId)
-                .stream()
-                .map(AnnouncementResponse::new)
-                .collect(Collectors.toList());
-    }
+    public Announcement updateAnnouncement(Long id, Long teacherId,
+                                           String title, String content) {
 
-    public AnnouncementResponse updateAnnouncement(Long announcementId, Long teacherId, String title, String content) {
-        Announcement announcement = announcementRepository.findById(announcementId)
-                .orElseThrow(() -> new RuntimeException("Announcement not found"));
+        Announcement announcement = announcementRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Announcement not found with id: " + id));
 
         if (!announcement.getTeacher().getId().equals(teacherId)) {
             throw new RuntimeException("You can only update your own announcements");
@@ -76,24 +81,21 @@ public class AnnouncementService {
         announcement.setTitle(title);
         announcement.setContent(content);
 
-        Announcement updated = announcementRepository.save(announcement);
-        return new AnnouncementResponse(updated);
+        return announcementRepository.save(announcement);
     }
-  
-    public void deleteAnnouncement(Long announcementId, Long teacherId) {
-        Announcement announcement = announcementRepository.findById(announcementId)
-                .orElseThrow(() -> new RuntimeException("Announcement not found"));
+
+
+
+    @Transactional
+    public void deleteAnnouncement(Long id, Long teacherId) {
+
+        Announcement announcement = announcementRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Announcement not found with id: " + id));
 
         if (!announcement.getTeacher().getId().equals(teacherId)) {
             throw new RuntimeException("You can only delete your own announcements");
         }
 
         announcementRepository.delete(announcement);
-    }
-
-    public AnnouncementResponse getAnnouncementById(Long announcementId) {
-        return announcementRepository.findById(announcementId)
-                .map(AnnouncementResponse::new)
-                .orElseThrow(() -> new RuntimeException("Announcement not found"));
     }
 }

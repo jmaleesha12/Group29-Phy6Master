@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Bell, Send, Trash2, Plus, X } from "lucide-react";
+import { toast } from "sonner";
 import { useCourses, useAnnouncementsByTeacher, useCreateAnnouncement, useDeleteAnnouncement } from "@/lib/api";
 
 export default function TeacherAnnouncementsPage() {
@@ -10,6 +11,9 @@ export default function TeacherAnnouncementsPage() {
   const createAnnouncementMutation = useCreateAnnouncement();
   const deleteAnnouncementMutation = useDeleteAnnouncement();
 
+  // Show courses owned by this teacher, OR courses without a teacher assigned (legacy)
+  const teacherCourses = courses.filter((c) => c.teacher?.id === teacherId || !c.teacher);
+
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState<number | null>(null);
   const [title, setTitle] = useState("");
@@ -18,7 +22,10 @@ export default function TeacherAnnouncementsPage() {
 
   const handleCreateAnnouncement = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedCourse || !title.trim() || !content.trim()) return;
+    if (!selectedCourse || !title.trim() || !content.trim()) {
+      toast.error("Please fill in all fields");
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -32,9 +39,11 @@ export default function TeacherAnnouncementsPage() {
       setContent("");
       setSelectedCourse(null);
       setIsDialogOpen(false);
+      toast.success("Announcement created successfully!");
       refetch();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to create announcement:", error);
+      toast.error(error?.message || "Failed to create announcement");
     } finally {
       setIsSubmitting(false);
     }
@@ -47,14 +56,16 @@ export default function TeacherAnnouncementsPage() {
           id: announcementId,
           teacherId,
         });
+        toast.success("Announcement deleted");
         refetch();
-      } catch (error) {
+      } catch (error: any) {
         console.error("Failed to delete announcement:", error);
+        toast.error(error?.message || "Failed to delete announcement");
       }
     }
   };
 
-  const courseDetails = courses.find((c) => c.id === selectedCourse);
+  const courseDetails = teacherCourses.find((c) => c.id === selectedCourse);
 
   return (
     <div className="space-y-6">
@@ -66,8 +77,10 @@ export default function TeacherAnnouncementsPage() {
           <p className="text-muted-foreground mt-1">Create and manage class announcements</p>
         </div>
         <button
+          type="button"
           onClick={() => setIsDialogOpen(true)}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors"
+          disabled={teacherCourses.length === 0}
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           <Plus className="h-5 w-5" /> New Announcement
         </button>
@@ -98,12 +111,17 @@ export default function TeacherAnnouncementsPage() {
                   className="w-full px-4 py-2.5 rounded-lg border border-border bg-secondary text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                 >
                   <option value="">-- Choose a class --</option>
-                  {courses.map((course) => (
+                  {teacherCourses.map((course) => (
                     <option key={course.id} value={course.id}>
                       {course.title} {course.batch && `(${course.batch})`}
                     </option>
                   ))}
                 </select>
+                {teacherCourses.length === 0 && (
+                  <p className="text-xs text-destructive mt-2">
+                    You have no classes assigned. Please create a class first in the Classes section.
+                  </p>
+                )}
                 {courseDetails && (
                   <p className="text-xs text-muted-foreground mt-2">
                     This announcement will be visible to all {courseDetails.batch} students enrolled in this class.

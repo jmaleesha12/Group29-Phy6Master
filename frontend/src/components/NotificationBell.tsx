@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bell, X, CheckCircle2 } from "lucide-react";
-import { useAnnouncementsForStudent } from "@/lib/api";
+import { Bell, X, CheckCircle2, ChevronLeft } from "lucide-react";
+import { useAnnouncementsForStudent, type Announcement } from "@/lib/api";
 
 export default function NotificationBell({ userId }: { userId: number | undefined }) {
   const { data: announcements = [] } = useAnnouncementsForStudent(userId);
   const [isOpen, setIsOpen] = useState(false);
   const [readAnnouncements, setReadAnnouncements] = useState<Set<number>>(new Set());
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
 
   useEffect(() => {
     const stored = localStorage.getItem("readAnnouncements");
@@ -28,6 +29,15 @@ export default function NotificationBell({ userId }: { userId: number | undefine
     const newRead = new Set(announcements.map((a) => a.id));
     setReadAnnouncements(newRead);
     localStorage.setItem("readAnnouncements", JSON.stringify(Array.from(newRead)));
+  };
+
+  const handleOpenAnnouncement = (announcement: Announcement) => {
+    handleMarkAsRead(announcement.id);
+    setSelectedAnnouncement(announcement);
+  };
+
+  const handleBack = () => {
+    setSelectedAnnouncement(null);
   };
 
   const getGroupedAnnouncements = () => {
@@ -77,9 +87,18 @@ export default function NotificationBell({ userId }: { userId: number | undefine
           >
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-border bg-secondary/50">
-              <h3 className="font-display font-semibold text-foreground">Announcements</h3>
+              {selectedAnnouncement ? (
+                <button
+                  onClick={handleBack}
+                  className="flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+                >
+                  <ChevronLeft className="h-4 w-4" /> Back
+                </button>
+              ) : (
+                <h3 className="font-display font-semibold text-foreground">Announcements</h3>
+              )}
               <div className="flex items-center gap-2">
-                {unreadCount > 0 && (
+                {!selectedAnnouncement && unreadCount > 0 && (
                   <button
                     onClick={handleMarkAllAsRead}
                     className="text-xs text-primary hover:underline font-medium"
@@ -87,7 +106,7 @@ export default function NotificationBell({ userId }: { userId: number | undefine
                     Mark all as read
                   </button>
                 )}
-                <button onClick={() => setIsOpen(false)} className="text-muted-foreground hover:text-foreground">
+                <button onClick={() => { setIsOpen(false); setSelectedAnnouncement(null); }} className="text-muted-foreground hover:text-foreground">
                   <X className="h-4 w-4" />
                 </button>
               </div>
@@ -95,7 +114,29 @@ export default function NotificationBell({ userId }: { userId: number | undefine
 
             {/* Content */}
             <div className="flex-1 overflow-y-auto">
-              {totalAnnouncements === 0 ? (
+              {selectedAnnouncement ? (
+                /* Detail View */
+                <div className="p-4">
+                  <div className="mb-4">
+                    <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-1 rounded">
+                      {selectedAnnouncement.courseName}
+                    </span>
+                  </div>
+                  <h4 className="text-lg font-semibold text-foreground mb-2">
+                    {selectedAnnouncement.title}
+                  </h4>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
+                    <span>By {selectedAnnouncement.teacherName}</span>
+                    <span>•</span>
+                    <span>{new Date(selectedAnnouncement.createdAt).toLocaleDateString()}</span>
+                  </div>
+                  <div className="prose prose-sm max-w-none">
+                    <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
+                      {selectedAnnouncement.content}
+                    </p>
+                  </div>
+                </div>
+              ) : totalAnnouncements === 0 ? (
                 <div className="p-6 text-center">
                   <CheckCircle2 className="h-10 w-10 text-muted-foreground/50 mx-auto mb-2" />
                   <p className="text-sm text-muted-foreground">No announcements yet</p>
@@ -114,7 +155,7 @@ export default function NotificationBell({ userId }: { userId: number | undefine
                         return (
                           <button
                             key={announcement.id}
-                            onClick={() => handleMarkAsRead(announcement.id)}
+                            onClick={() => handleOpenAnnouncement(announcement)}
                             className={`w-full p-4 text-left hover:bg-accent transition-colors border-b border-border last:border-b-0 ${
                               !isRead ? "bg-primary/5" : ""
                             }`}
@@ -148,7 +189,7 @@ export default function NotificationBell({ userId }: { userId: number | undefine
             </div>
 
             {/* Footer */}
-            {totalAnnouncements > 0 && (
+            {!selectedAnnouncement && totalAnnouncements > 0 && (
               <div className="p-3 border-t border-border bg-secondary/30 text-center">
                 <p className="text-xs text-muted-foreground">
                   {unreadCount === 0 ? "All caught up!" : `${unreadCount} unread announcement${unreadCount !== 1 ? "s" : ""}`}

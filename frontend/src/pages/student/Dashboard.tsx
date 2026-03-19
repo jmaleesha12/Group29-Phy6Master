@@ -1,19 +1,59 @@
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { Video, Bell, CreditCard, Brain, TrendingUp, Check } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Bell, Check, BookOpen, CalendarDays, Clock, ExternalLink, X, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useAnnouncementsForStudent } from "@/lib/api";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { useAnnouncementsForStudent, useStudentCourses, useTimetable, dayDisplayName, formatTime } from "@/lib/api";
+import type { TimetableSlot, Announcement } from "@/lib/api";
+
+
 
 const card = "rounded-xl border border-border bg-card p-5 shadow-card";
 const fadeIn = { initial: { opacity: 0, y: 15 }, animate: { opacity: 1, y: 0 } };
 
 export default function Dashboard() {
   const userId = Number(localStorage.getItem("authUserId")) || undefined;
+  const studentName = localStorage.getItem("authName") || "Student";
+  const { data: courses = [], isLoading: loadingCourses } = useStudentCourses(userId);
+  const { data: timetable = [], isLoading: loadingTimetable } = useTimetable();
   const { data: announcements = [], isLoading: loadingAnnouncements } = useAnnouncementsForStudent(userId);
 
   const [readAnnouncements, setReadAnnouncements] = useState<Set<number>>(new Set());
   const [showAll, setShowAll] = useState(false);
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
+
+  // Today's day of week as backend enum
+  const todayEnum = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"][new Date().getDay()];
+
+  // Filter timetable to courses the student is enrolled in
+  const enrolledCourseIds = new Set(courses.map((c) => c.id));
+  const todaySlots = timetable
+    .filter((s) => s.dayOfWeek === todayEnum && enrolledCourseIds.has(s.course?.id))
+    .sort((a, b) => a.startTime.localeCompare(b.startTime));
+
+  // Live-detection: re-render every 10s with real timestamp
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 10_000);
+    return () => clearInterval(id);
+  }, []);
+
+  /** True only while class is actually running (for LIVE badge) */
+  const isLive = (slot: TimetableSlot) => {
+    const d = new Date(now);
+    const nowMin = d.getHours() * 60 + d.getMinutes();
+    const [sh, sm] = slot.startTime.split(":").map(Number);
+    const [eh, em] = slot.endTime.split(":").map(Number);
+    return nowMin >= sh * 60 + sm && nowMin < eh * 60 + em;
+  };
+
+  /** True from 10 minutes before class start until 10 minutes after class end (for Join Now) */
+  const isJoinable = (slot: TimetableSlot) => {
+    const d = new Date(now);
+    const nowMin = d.getHours() * 60 + d.getMinutes();
+    const [sh, sm] = slot.startTime.split(":").map(Number);
+    const [eh, em] = slot.endTime.split(":").map(Number);
+    return nowMin >= sh * 60 + sm - 10 && nowMin < eh * 60 + em + 10;
+  };
 
   // Hydrate read state from localStorage (same source of truth as NotificationBell)
   useEffect(() => {
@@ -36,212 +76,192 @@ export default function Dashboard() {
     localStorage.setItem("readAnnouncements", JSON.stringify(Array.from(updated)));
   };
 
+  const openAnnouncement = (announcement: Announcement) => {
+    markRead(announcement.id);
+    setSelectedAnnouncement(announcement);
+  };
+
+  const closeAnnouncement = () => {
+    setSelectedAnnouncement(null);
+  };
+
   const displayed = showAll ? announcements : announcements.slice(0, 3);
   const unreadCount = announcements.filter((a) => !readAnnouncements.has(a.id)).length;
 
-  const avgScore = quizPerformance.averageScore;
-  const motivational =
-      avgScore >= 80 ? "🔥 Outstanding! Keep up the great work!" :
-          avgScore >= 60 ? "💪 Good progress! Push a little harder!" :
-              "📚 Keep studying, you'll get there!";
-
   return (
-      <div className="space-y-6">
-        <motion.h1 {...fadeIn} className="font-display text-2xl font-bold text-foreground">
-          Dashboard
-        </motion.h1>
+    <div className="space-y-6">
+      <motion.h1 {...fadeIn} className="font-display text-2xl font-bold text-foreground">
+        Welcome back, {studentName}!
+      </motion.h1>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-          {/* Upcoming Classes */}
-          <motion.div {...fadeIn} transition={{ delay: 0.1 }} className={`${card} lg:col-span-2`}>
-            <div className="flex items-center gap-2 mb-4">
-              <Video className="h-5 w-5 text-primary" />
-              <h2 className="font-display font-semibold text-foreground">Upcoming Classes</h2>
-            </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Enrolled Courses */}
+        <motion.div {...fadeIn} transition={{ delay: 0.1 }} className={`${card} lg:col-span-2`}>
+          <div className="flex items-center gap-2 mb-4">
+            <BookOpen className="h-5 w-5 text-primary" />
+            <h2 className="font-display font-semibold text-foreground">My Courses</h2>
+          </div>
+          {loadingCourses ? (
+            <p className="text-sm text-muted-foreground">Loading...</p>
+          ) : courses.length === 0 ? (
+            <p className="text-sm text-muted-foreground">You are not enrolled in any courses yet.</p>
+          ) : (
             <div className="space-y-3">
-              {upcomingClasses.map((c) => (
-                  <div key={c.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary">
-                    <div>
-                      <p className="font-medium text-sm text-foreground">{c.title}</p>
-                      <p className="text-xs text-muted-foreground">{c.day} | {c.time}</p>
-                    </div>
-                    <Button
-                        size="sm"
-                        className={
-                          c.status === "live"
-                              ? "gradient-cta text-primary-foreground animate-pulse-glow"
-                              : "bg-accent text-accent-foreground"
-                        }
-                    >
-                      {c.status === "live" ? "Join Now" : "View"}
-                    </Button>
+              {courses.map((c) => (
+                <div key={c.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary">
+                  <div>
+                    <p className="font-medium text-sm text-foreground">{c.title}</p>
+                    <p className="text-xs text-muted-foreground">{c.subject || "Physics"} · {c.batch || "–"}</p>
                   </div>
+                </div>
               ))}
             </div>
-          </motion.div>
+          )}
+        </motion.div>
 
-          {/* Announcements — real API data, read state synced with NotificationBell */}
-          <motion.div {...fadeIn} transition={{ delay: 0.15 }} className={card}>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Bell className="h-5 w-5 text-primary" />
-                <h2 className="font-display font-semibold text-foreground">Announcements</h2>
-              </div>
-              {unreadCount > 0 && (
-                  <button onClick={markAllRead} className="text-xs text-primary hover:underline">
-                    Mark all read
-                  </button>
-              )}
-            </div>
-
-            {loadingAnnouncements ? (
-                <p className="text-sm text-muted-foreground">Loading...</p>
-            ) : announcements.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No announcements yet.</p>
-            ) : (
-                <>
-                  <div className="space-y-2">
-                    {displayed.map((a) => {
-                      const isRead = readAnnouncements.has(a.id);
-                      return (
-                          <div
-                              key={a.id}
-                              className={`p-3 rounded-lg text-sm flex items-start justify-between gap-2 ${
-                                  isRead ? "bg-secondary" : "bg-accent border-l-2 border-primary"
-                              }`}
-                          >
-                            <div className="min-w-0">
-                              <p className="font-medium text-foreground truncate">{a.title}</p>
-                              <p className="text-xs text-muted-foreground mt-0.5">
-                                {new Date(a.createdAt).toLocaleDateString()} · {a.courseName}
-                              </p>
-                            </div>
-                            {!isRead && (
-                                <button
-                                    onClick={() => markRead(a.id)}
-                                    className="shrink-0 p-1 rounded hover:bg-secondary"
-                                >
-                                  <Check className="h-3 w-3 text-primary" />
-                                </button>
-                            )}
-                          </div>
-                      );
-                    })}
+        {/* Today's Schedule */}
+        <motion.div {...fadeIn} transition={{ delay: 0.15 }} className={card}>
+          <div className="flex items-center gap-2 mb-4">
+            <CalendarDays className="h-5 w-5 text-primary" />
+            <h2 className="font-display font-semibold text-foreground">Today ({dayDisplayName(todayEnum)})</h2>
+          </div>
+          {loadingTimetable ? (
+            <p className="text-sm text-muted-foreground">Loading...</p>
+          ) : todaySlots.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No classes scheduled for today.</p>
+          ) : (
+            <div className="space-y-2">
+              {todaySlots.map((slot) => (
+                <div key={slot.id} className="p-3 rounded-lg bg-secondary">
+                  <div className="flex items-center justify-between">
+                    <p className="font-medium text-sm text-foreground">{slot.course?.title}</p>
+                    {isLive(slot) && (
+                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-red-500">
+                        <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" /> LIVE
+                      </span>
+                    )}
                   </div>
-
-                  {announcements.length > 3 && (
-                      <button
-                          onClick={() => setShowAll(!showAll)}
-                          className="mt-3 text-xs text-primary hover:underline w-full text-center"
-                      >
-                        {showAll ? "Show less" : `View all (${announcements.length})`}
-                      </button>
+                  <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                    <Clock className="h-3 w-3" /> {formatTime(slot.startTime)} – {formatTime(slot.endTime)}
+                  </p>
+                  {slot.location && <p className="text-xs text-muted-foreground">{slot.location}</p>}
+                  {isJoinable(slot) && slot.meetingLink && (
+                    <Button size="sm" className="mt-2 gap-1.5 gradient-cta text-primary-foreground w-full"
+                      onClick={() => window.open(slot.meetingLink, "_blank")}>
+                      <ExternalLink className="h-3.5 w-3.5" /> Join Now
+                    </Button>
                   )}
-                </>
+                </div>
+              ))}
+            </div>
+          )}
+        </motion.div>
+
+        {/* Announcements — real API data, read state synced with NotificationBell */}
+        <motion.div {...fadeIn} transition={{ delay: 0.2 }} className={card}>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Bell className="h-5 w-5 text-primary" />
+              <h2 className="font-display font-semibold text-foreground">Announcements</h2>
+            </div>
+            {unreadCount > 0 && (
+              <button onClick={markAllRead} className="text-xs text-primary hover:underline">
+                Mark all read
+              </button>
             )}
-          </motion.div>
-        </div>
+          </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {loadingAnnouncements ? (
+            <p className="text-sm text-muted-foreground">Loading...</p>
+          ) : announcements.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No announcements yet.</p>
+          ) : (
+            <>
+              <div className="space-y-2">
+                {displayed.map((a) => {
+                  const isRead = readAnnouncements.has(a.id);
+                  return (
+                    <button
+                      key={a.id}
+                      onClick={() => openAnnouncement(a)}
+                      className={`w-full p-3 rounded-lg text-sm text-left hover:bg-accent/50 transition-colors ${isRead ? "bg-secondary" : "bg-accent border-l-2 border-primary"
+                        }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-foreground truncate">{a.title}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {new Date(a.createdAt).toLocaleDateString()} · {a.courseName}
+                          </p>
+                        </div>
+                        {!isRead && (
+                          <span className="shrink-0 h-2 w-2 rounded-full bg-primary mt-1.5" />
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
 
-          {/* Payment Status */}
-          <motion.div {...fadeIn} transition={{ delay: 0.2 }} className={card}>
-            <div className="flex items-center gap-2 mb-4">
-              <CreditCard className="h-5 w-5 text-primary" />
-              <h2 className="font-display font-semibold text-foreground">Payment Status</h2>
-            </div>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Plan</span>
-                <span className="text-foreground font-medium">{paymentStatus.plan}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Next Due</span>
-                <span className="text-foreground font-medium">{paymentStatus.nextDue}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Amount</span>
-                <span className="text-foreground font-medium">
-                {paymentStatus.currency} {paymentStatus.amount.toLocaleString()}
-              </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Status</span>
-                <span className="text-warning font-semibold capitalize">{paymentStatus.status}</span>
-              </div>
-            </div>
-            <Button size="sm" className="mt-4 w-full gradient-cta text-primary-foreground font-semibold">
-              View Details
-            </Button>
-          </motion.div>
-
-          {/* Quiz Performance */}
-          <motion.div {...fadeIn} transition={{ delay: 0.25 }} className={card}>
-            <div className="flex items-center gap-2 mb-4">
-              <Brain className="h-5 w-5 text-primary" />
-              <h2 className="font-display font-semibold text-foreground">Quiz Performance</h2>
-            </div>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Completed</span>
-                <span className="text-foreground font-medium">
-                {quizPerformance.completed}/{quizPerformance.totalQuizzes}
-              </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Average</span>
-                <span className="text-foreground font-medium">{quizPerformance.averageScore}%</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Best Score</span>
-                <span className="text-foreground font-medium">{quizPerformance.bestScore}%</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Trend</span>
-                <span
-                    className={`font-semibold flex items-center gap-1 ${
-                        quizPerformance.trend === "up" ? "text-success" : "text-destructive"
-                    }`}
+              {announcements.length > 3 && (
+                <button
+                  onClick={() => setShowAll(!showAll)}
+                  className="mt-3 text-xs text-primary hover:underline w-full text-center"
                 >
-                <TrendingUp className="h-3 w-3" />
-                  {quizPerformance.trend === "up" ? "Improving" : "Declining"}
-              </span>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Progress Chart */}
-          <motion.div {...fadeIn} transition={{ delay: 0.3 }} className={card}>
-            <div className="flex items-center gap-2 mb-2">
-              <TrendingUp className="h-5 w-5 text-primary" />
-              <h2 className="font-display font-semibold text-foreground">Progress</h2>
-            </div>
-            <p className="text-xs text-muted-foreground mb-3">{motivational}</p>
-            <ResponsiveContainer width="100%" height={120}>
-              <LineChart data={progressData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(222 30% 22%)" />
-                <XAxis dataKey="month" tick={{ fontSize: 10, fill: "hsl(215 20% 65%)" }} axisLine={false} />
-                <YAxis tick={{ fontSize: 10, fill: "hsl(215 20% 65%)" }} axisLine={false} domain={[50, 100]} />
-                <Tooltip
-                    contentStyle={{
-                      background: "hsl(222 47% 14%)",
-                      border: "1px solid hsl(222 30% 22%)",
-                      borderRadius: 8,
-                      color: "hsl(210 40% 98%)",
-                    }}
-                />
-                <Line
-                    type="monotone"
-                    dataKey="score"
-                    stroke="hsl(45 93% 47%)"
-                    strokeWidth={2}
-                    dot={{ fill: "hsl(45 93% 47%)", r: 3 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </motion.div>
-        </div>
+                  {showAll ? "Show less" : `View all (${announcements.length})`}
+                </button>
+              )}
+            </>
+          )}
+        </motion.div>
       </div>
+
+      {/* Announcement Detail Modal */}
+      <AnimatePresence>
+        {selectedAnnouncement && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+            onClick={closeAnnouncement}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-card border border-border rounded-xl p-6 max-w-lg w-full max-h-[80vh] overflow-y-auto shadow-card"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-start justify-between mb-4">
+                <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-1 rounded">
+                  {selectedAnnouncement.courseName}
+                </span>
+                <button onClick={closeAnnouncement} className="text-muted-foreground hover:text-foreground">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <h3 className="text-xl font-semibold text-foreground mb-2">
+                {selectedAnnouncement.title}
+              </h3>
+
+              <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
+                <span>By {selectedAnnouncement.teacherName}</span>
+                <span>•</span>
+                <span>{new Date(selectedAnnouncement.createdAt).toLocaleDateString()}</span>
+              </div>
+
+              <div className="border-t border-border pt-4">
+                <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
+                  {selectedAnnouncement.content}
+                </p>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
+

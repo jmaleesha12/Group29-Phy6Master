@@ -1,4 +1,4 @@
-package com.example.Phy6_Master.model;
+  package com.example.Phy6_Master.model;
 
 import jakarta.persistence.*;
 import lombok.Data;

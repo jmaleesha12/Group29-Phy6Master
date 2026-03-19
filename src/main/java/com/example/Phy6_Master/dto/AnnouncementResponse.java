@@ -1,9 +1,12 @@
- package com.example.Phy6_Master.dto;
+package com.example.Phy6_Master.dto;
 
-import com.example.Phy6_Master.model.Announcement;
 import java.time.LocalDateTime;
 
+/**
+ * DTO for sending announcement response data.
+ */
 public class AnnouncementResponse {
+
     private Long id;
     private String title;
     private String content;
@@ -14,44 +17,95 @@ public class AnnouncementResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    public AnnouncementResponse() {}
-
-    public AnnouncementResponse(Announcement announcement) {
-        this.id = announcement.getId();
-        this.title = announcement.getTitle();
-        this.content = announcement.getContent();
-        this.courseId = announcement.getCourse().getId();
-        this.courseName = announcement.getCourse().getTitle();
-        this.teacherId = announcement.getTeacher().getId();
-        this.teacherName = announcement.getTeacher().getName();
-        this.createdAt = announcement.getCreatedAt();
-        this.updatedAt = announcement.getUpdatedAt();
+    public AnnouncementResponse() {
     }
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public AnnouncementResponse(Long id, String title, String content,
+                                Long courseId, String courseName,
+                                Long teacherId, String teacherName,
+                                LocalDateTime createdAt, LocalDateTime updatedAt) {
+        this.id = id;
+        this.title = title;
+        this.content = content;
+        this.courseId = courseId;
+        this.courseName = courseName;
+        this.teacherId = teacherId;
+        this.teacherName = teacherName;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
+    }
 
-    public String getTitle() { return title; }
-    public void setTitle(String title) { this.title = title; }
+    // ── Getters & Setters ─────────────────────────────────────────────────────
 
-    public String getContent() { return content; }
-    public void setContent(String content) { this.content = content; }
+    public Long getId() {
+        return id;
+    }
 
-    public Long getCourseId() { return courseId; }
-    public void setCourseId(Long courseId) { this.courseId = courseId; }
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-    public String getCourseName() { return courseName; }
-    public void setCourseName(String courseName) { this.courseName = courseName; }
+    public String getTitle() {
+        return title;
+    }
 
-    public Long getTeacherId() { return teacherId; }
-    public void setTeacherId(Long teacherId) { this.teacherId = teacherId; }
+    public void setTitle(String title) {
+        this.title = title;
+    }
 
-    public String getTeacherName() { return teacherName; }
-    public void setTeacherName(String teacherName) { this.teacherName = teacherName; }
+    public String getContent() {
+        return content;
+    }
 
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public void setContent(String content) {
+        this.content = content;
+    }
 
-    public LocalDateTime getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+    public Long getCourseId() {
+        return courseId;
+    }
+
+    public void setCourseId(Long courseId) {
+        this.courseId = courseId;
+    }
+
+    public String getCourseName() {
+        return courseName;
+    }
+
+    public void setCourseName(String courseName) {
+        this.courseName = courseName;
+    }
+
+    public Long getTeacherId() {
+        return teacherId;
+    }
+
+    public void setTeacherId(Long teacherId) {
+        this.teacherId = teacherId;
+    }
+
+    public String getTeacherName() {
+        return teacherName;
+    }
+
+    public void setTeacherName(String teacherName) {
+        this.teacherName = teacherName;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
 }

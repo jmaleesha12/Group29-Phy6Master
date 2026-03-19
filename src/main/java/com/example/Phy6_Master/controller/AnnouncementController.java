@@ -1,6 +1,7 @@
 package com.example.Phy6_Master.controller;
 
 import com.example.Phy6_Master.dto.AnnouncementResponse;
+import com.example.Phy6_Master.model.Announcement;
 import com.example.Phy6_Master.service.AnnouncementService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -9,10 +10,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/announcements")
-@CrossOrigin(origins = "*")
 public class AnnouncementController {
 
     @Autowired
@@ -26,8 +27,8 @@ public class AnnouncementController {
             String title = (String) request.get("title");
             String content = (String) request.get("content");
 
-            AnnouncementResponse response = announcementService.createAnnouncement(courseId, teacherId, title, content);
-            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+            Announcement announcement = announcementService.createAnnouncement(courseId, teacherId, title, content);
+            return ResponseEntity.status(HttpStatus.CREATED).body(convertToResponse(announcement));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
@@ -35,27 +36,31 @@ public class AnnouncementController {
 
     @GetMapping("/course/{courseId}")
     public ResponseEntity<List<AnnouncementResponse>> getAnnouncementsByCourse(@PathVariable Long courseId) {
-        List<AnnouncementResponse> announcements = announcementService.getAnnouncementsByCourse(courseId);
+        List<AnnouncementResponse> announcements = announcementService.getAnnouncementsByCourse(courseId)
+                .stream().map(this::convertToResponse).collect(Collectors.toList());
         return ResponseEntity.ok(announcements);
     }
-    
+
     @GetMapping("/teacher/{teacherId}")
     public ResponseEntity<List<AnnouncementResponse>> getAnnouncementsByTeacher(@PathVariable Long teacherId) {
-        List<AnnouncementResponse> announcements = announcementService.getAnnouncementsByTeacher(teacherId);
+        List<AnnouncementResponse> announcements = announcementService.getAnnouncementsByTeacher(teacherId)
+                .stream().map(this::convertToResponse).collect(Collectors.toList());
         return ResponseEntity.ok(announcements);
     }
 
     @GetMapping("/student/{userId}")
     public ResponseEntity<List<AnnouncementResponse>> getAnnouncementsForStudent(@PathVariable Long userId) {
-        List<AnnouncementResponse> announcements = announcementService.getAnnouncementsForStudent(userId);
+        List<AnnouncementResponse> announcements = announcementService.getAnnouncementsForStudent(userId)
+                .stream().map(this::convertToResponse).collect(Collectors.toList());
         return ResponseEntity.ok(announcements);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getAnnouncementById(@PathVariable Long id) {
         try {
-            AnnouncementResponse announcement = announcementService.getAnnouncementById(id);
-            return ResponseEntity.ok(announcement);
+            Announcement announcement = announcementService.getAnnouncementById(id)
+                    .orElseThrow(() -> new RuntimeException("Announcement not found with id: " + id));
+            return ResponseEntity.ok(convertToResponse(announcement));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", e.getMessage()));
         }
@@ -68,8 +73,8 @@ public class AnnouncementController {
             String title = (String) request.get("title");
             String content = (String) request.get("content");
 
-            AnnouncementResponse response = announcementService.updateAnnouncement(id, teacherId, title, content);
-            return ResponseEntity.ok(response);
+            Announcement announcement = announcementService.updateAnnouncement(id, teacherId, title, content);
+            return ResponseEntity.ok(convertToResponse(announcement));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
@@ -83,5 +88,22 @@ public class AnnouncementController {
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
+    }
+
+    /**
+     * Converts an Announcement entity to an AnnouncementResponse DTO.
+     */
+    private AnnouncementResponse convertToResponse(Announcement announcement) {
+        AnnouncementResponse response = new AnnouncementResponse();
+        response.setId(announcement.getId());
+        response.setTitle(announcement.getTitle());
+        response.setContent(announcement.getContent());
+        response.setCourseId(announcement.getCourse().getId());
+        response.setCourseName(announcement.getCourse().getTitle());
+        response.setTeacherId(announcement.getTeacher().getId());
+        response.setTeacherName(announcement.getTeacher().getName());
+        response.setCreatedAt(announcement.getCreatedAt());
+        response.setUpdatedAt(announcement.getUpdatedAt());
+        return response;
     }
 }
