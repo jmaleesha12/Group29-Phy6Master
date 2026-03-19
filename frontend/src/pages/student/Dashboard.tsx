@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Video, Bell, CreditCard, Brain, TrendingUp, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { upcomingClasses, paymentStatus, quizPerformance, progressData } from "@/lib/mock-data";
 import { useAnnouncementsForStudent } from "@/lib/api";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
