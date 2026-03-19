@@ -46,7 +46,7 @@ public class LessonController {
     public ResponseEntity<Void> deleteLesson(@PathVariable Long id) {
         try {
             lessonService.deleteLesson(id);
-            return ResponseEntity.ok().build();
+            return ResponseEntity.noContent().build();
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
