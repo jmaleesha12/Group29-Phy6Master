@@ -10,7 +10,7 @@ import About from "./pages/About";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 import StudentLayout from "./components/StudentLayout";
-import {Dashboard} from "./pages/student/Dashboard";
+import Dashboard from "./pages/student/Dashboard";
 import Resources from "./pages/student/Resources";
 import StudentClasses from "./pages/student/Classes";
 import Schedule from "./pages/student/Schedule";
