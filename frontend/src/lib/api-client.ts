@@ -11,8 +11,24 @@ class ApiError extends Error {
 
 async function handleResponse<T>(res: Response): Promise<T> {
   if (!res.ok) {
+<<<<<<< Updated upstream
     const body = await res.json().catch(() => ({}));
     throw new ApiError(body.message || `Request failed (${res.status})`, res.status);
+=======
+    let message = `Request failed (${res.status})`;
+    try {
+      const text = await res.text();
+      // Try to parse as JSON first
+      try {
+        const json = JSON.parse(text);
+        message = json.message || json.error || text;
+      } catch {
+        // Plain text error from backend
+        if (text) message = text;
+      }
+    } catch { /* ignore */ }
+    throw new ApiError(message, res.status);
+>>>>>>> Stashed changes
   }
   // 204 No Content
   if (res.status === 204) return undefined as unknown as T;
@@ -20,7 +36,11 @@ async function handleResponse<T>(res: Response): Promise<T> {
 }
 
 export async function get<T>(path: string): Promise<T> {
+<<<<<<< Updated upstream
   const res = await fetch(`${BASE_URL}${path}`);
+=======
+  const res = await fetch(`${BASE_URL}${path}`, { cache: "no-store" });
+>>>>>>> Stashed changes
   return handleResponse<T>(res);
 }
 
@@ -29,6 +49,10 @@ export async function post<T>(path: string, body?: unknown): Promise<T> {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: body ? JSON.stringify(body) : undefined,
+<<<<<<< Updated upstream
+=======
+    cache: "no-store",
+>>>>>>> Stashed changes
   });
   return handleResponse<T>(res);
 }
@@ -38,12 +62,20 @@ export async function put<T>(path: string, body?: unknown): Promise<T> {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: body ? JSON.stringify(body) : undefined,
+<<<<<<< Updated upstream
+=======
+    cache: "no-store",
+>>>>>>> Stashed changes
   });
   return handleResponse<T>(res);
 }
 
 export async function del<T = void>(path: string): Promise<T> {
+<<<<<<< Updated upstream
   const res = await fetch(`${BASE_URL}${path}`, { method: "DELETE" });
+=======
+  const res = await fetch(`${BASE_URL}${path}`, { method: "DELETE", cache: "no-store" });
+>>>>>>> Stashed changes
   return handleResponse<T>(res);
 }
 
@@ -51,6 +83,10 @@ export async function uploadFile<T>(path: string, formData: FormData, method: st
   const res = await fetch(`${BASE_URL}${path}`, {
     method,
     body: formData,
+<<<<<<< Updated upstream
+=======
+    cache: "no-store",
+>>>>>>> Stashed changes
   });
   return handleResponse<T>(res);
 }

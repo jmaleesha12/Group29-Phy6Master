@@ -1,6 +1,9 @@
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Users, BookOpen, CalendarDays, Clock } from "lucide-react";
+import { Users, BookOpen, CalendarDays, Clock, ExternalLink } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useCourses, useTimetable, useAllStudents, dayDisplayName, formatTime } from "@/lib/api";
+import type { TimetableSlot } from "@/lib/api";
 
 export default function TeacherDashboard() {
   const { data: courses = [], isLoading: loadingCourses } = useCourses();
@@ -12,6 +15,22 @@ export default function TeacherDashboard() {
   // Today's day of week as backend enum e.g. "MONDAY"
   const todayEnum = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"][new Date().getDay()];
   const todaySlots = timetable.filter((s) => s.dayOfWeek === todayEnum);
+
+  // Live-detection: re-render every 10s with real timestamp
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 10_000);
+    return () => clearInterval(id);
+  }, []);
+
+  /** True from class start until 10 min after class end (for Start Now button) */
+  const isJoinable = (slot: TimetableSlot) => {
+    const d = new Date(now);
+    const nowMin = d.getHours() * 60 + d.getMinutes();
+    const [sh, sm] = slot.startTime.split(":").map(Number);
+    const [eh, em] = slot.endTime.split(":").map(Number);
+    return nowMin >= sh * 60 + sm && nowMin < eh * 60 + em + 10;
+  };
 
   const stats = [
     { label: "Total Students", value: String(students.length), icon: Users },
@@ -65,6 +84,14 @@ export default function TeacherDashboard() {
                     <p className="text-sm font-medium text-foreground">{slot.course?.title ?? "Untitled"}</p>
                     <p className="text-xs text-muted-foreground">{slot.location || "No location"}</p>
                   </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {slot.meetingLink && (
+                    <Button size="sm" className="gap-1.5 gradient-cta text-primary-foreground"
+                      onClick={() => window.open(slot.meetingLink, "_blank")}>
+                      <ExternalLink className="h-3.5 w-3.5" /> Start Now
+                    </Button>
+                  )}
                 </div>
               </div>
             ))}

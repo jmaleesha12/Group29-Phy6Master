@@ -11,17 +11,31 @@ import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 import StudentLayout from "./components/StudentLayout";
 import Dashboard from "./pages/student/Dashboard";
+import Resources from "./pages/student/Resources";
 import StudentClasses from "./pages/student/Classes";
 import Schedule from "./pages/student/Schedule";
 import SettingsPage from "./pages/student/Settings";
 import TeacherDashboard from "./pages/teacher/Dashboard";
+import MyCourses from "./pages/student/MyCourses";
+import CourseDetail from "./pages/student/CourseDetail";
+import Students from "./pages/teacher/Students";
 import ClassManagement from "./pages/teacher/ClassManagement";
 import ContentUpload from "./pages/teacher/ContentUpload";
 import Timetable from "./pages/teacher/Timetable";
 import TeacherLayout from "./components/TeacherLayout";
 import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 0,                // data is immediately stale → refetch on every mount
+      gcTime: 0,                   // don't keep stale cache entries after unmount
+      refetchOnMount: "always",    // always refetch when component mounts (even if data exists)
+      refetchOnWindowFocus: true,  // refetch when user tabs back / focuses window
+      retry: 2,                    // retry failed requests twice before giving up
+    },
+  },
+});
 
 const App = () => {
   useTheme();
@@ -39,6 +53,7 @@ const App = () => {
             <Route path="/signup" element={<SignUp />} />
             <Route path="/teacher" element={<TeacherLayout />}>
               <Route path="dashboard" element={<TeacherDashboard />} />
+              <Route path="students" element={<Students />} />
               <Route path="classes" element={<ClassManagement />} />
               <Route path="content" element={<ContentUpload />} />
               <Route path="timetable" element={<Timetable />} />
@@ -47,7 +62,10 @@ const App = () => {
             <Route path="/student" element={<StudentLayout />}>
               <Route index element={<Navigate to="dashboard" replace />} />
               <Route path="dashboard" element={<Dashboard />} />
+              <Route path="resources" element={<Resources />} />
               <Route path="classes" element={<StudentClasses />} />
+              <Route path="courses" element={<MyCourses />} />
+              <Route path="courses/:courseId" element={<CourseDetail />} />
               <Route path="schedule" element={<Schedule />} />
               <Route path="settings" element={<SettingsPage />} />
             </Route>

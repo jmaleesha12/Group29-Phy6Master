@@ -26,3 +26,22 @@ export function useStudentCourses(userId: number | undefined) {
     enabled: !!userId,
   });
 }
+
+/** Get lessons with materials for a specific course */
+export function useCourseLessons(userId: number | undefined, courseId: number | undefined) {
+  return useQuery<LessonWithMaterials[]>({
+    queryKey: ["course-lessons", userId, courseId],
+    queryFn: () => get<LessonWithMaterials[]>(`/api/students/by-user/${userId}/courses/${courseId}/lessons`),
+    enabled: !!userId && !!courseId,
+  });
+}
+
+/** Get materials for a specific lesson */
+export function useLessonMaterials(userId: number | undefined, lessonId: number | undefined) {
+  return useQuery<MaterialResponse[]>({
+    queryKey: ["lesson-materials", userId, lessonId],
+    queryFn: () => get<MaterialResponse[]>(`/api/students/by-user/${userId}/lessons/${lessonId}/materials`),
+    enabled: !!userId && !!lessonId,
+  });
+}
+

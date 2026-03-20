@@ -29,6 +29,7 @@ export interface TimetableSlot {
   endTime: string;   // "HH:mm:ss"
   location?: string;
   notes?: string;
+  meetingLink?: string;
 }
 
 export interface TimetableSlotDTO {
@@ -38,12 +39,16 @@ export interface TimetableSlotDTO {
   endTime: string;   // "HH:mm"
   location?: string;
   notes?: string;
+  meetingLink?: string;
 }
 
 export interface Lesson {
   id: number;
   title: string;
   content?: string;
+  courseId: number;
+  month?: string;   // "YYYY-MM" e.g. "2026-03"
+  courseId?: number; // exposed from backend @JsonProperty
 }
 
 export interface LearningMaterial {

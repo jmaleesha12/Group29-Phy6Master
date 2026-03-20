@@ -28,7 +28,7 @@ public class LessonService {
     }
 
     public List<Lesson> getLessonsByCourseId(Long courseId) {
-        return lessonRepository.findByCourseId(courseId);
+        return lessonRepository.findByCourse_IdOrderByMonthAsc(courseId);
     }
 
     public Optional<Lesson> getLessonById(Long id) {
@@ -41,6 +41,7 @@ public class LessonService {
 
         lesson.setTitle(lessonDetails.getTitle());
         lesson.setContent(lessonDetails.getContent());
+        lesson.setMonth(lessonDetails.getMonth());
 
         return lessonRepository.save(lesson);
     }

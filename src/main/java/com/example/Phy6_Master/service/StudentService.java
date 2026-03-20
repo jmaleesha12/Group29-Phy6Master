@@ -4,14 +4,20 @@ import com.example.Phy6_Master.model.Course;
 import com.example.Phy6_Master.model.Enrollment;
 import com.example.Phy6_Master.model.LearningMaterial;
 import com.example.Phy6_Master.model.User;
+import com.example.Phy6_Master.dto.MaterialResponse;
+import com.example.Phy6_Master.model.Lesson;
 import com.example.Phy6_Master.repository.EnrollmentRepository;
 import com.example.Phy6_Master.repository.LearningMaterialRepository;
 import com.example.Phy6_Master.repository.UserRepository;
+import com.example.Phy6_Master.repository.LessonRepository;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.stream.Collectors;
+
+import com.example.Phy6_Master.dto.LessonResponse;
 
 @Service
 public class StudentService {
@@ -25,7 +31,10 @@ public class StudentService {
     @Autowired
     private LearningMaterialRepository learningMaterialRepository;
 
-    public List<Course> getEnrolledCourses(Long studentId) {
+    @Autowired
+    private LessonRepository lessonRepository;
+
+    public List<Object> getEnrolledCourses(Long studentId) {
         User student = userRepository.findById(studentId)
                 .orElseThrow(() -> new RuntimeException("Student not found"));
 
@@ -36,7 +45,48 @@ public class StudentService {
     }
 
     public List<LearningMaterial> getCourseMaterials(Long courseId) {
-        // ideally check if student is enrolled in this course
         return learningMaterialRepository.findByCourseId(courseId);
+    }
+
+    public List<LessonResponse> getCourseLessonsWithMaterials(Long studentId, Long courseId) {
+        User student = userRepository.findById(studentId)
+                .orElseThrow(() -> new RuntimeException("Student not found"));
+
+        boolean isEnrolled = enrollmentRepository.findByStudent(student).stream()
+                .anyMatch(e -> e.getCourse().equals(courseId));
+
+        if (!isEnrolled) {
+            throw new RuntimeException("Student is not enrolled in this course");
+        }
+
+        List<Lesson> lessons = lessonRepository.findByCourseId(courseId);
+
+        return lessons.stream().map(lesson -> {
+            List<MaterialResponse> materials = learningMaterialRepository.findByLessonId(lesson.getId())
+                    .stream()
+                    .map(MaterialResponse::new)
+                    .collect(Collectors.toList());
+            return new LessonResponse(lesson, materials);
+        }).collect(Collectors.toList());
+    }
+
+    public List<MaterialResponse> getLessonMaterials(Long studentId, Long lessonId) {
+        Lesson lesson = lessonRepository.findById(lessonId)
+                .orElseThrow(() -> new RuntimeException("Lesson not found"));
+
+        User student = userRepository.findById(studentId)
+                .orElseThrow(() -> new RuntimeException("Student not found"));
+
+        boolean isEnrolled = enrollmentRepository.findByStudent(student).stream()
+                .anyMatch(e -> e.getCourse().equals(lesson.getCourse().getId()));
+
+        if (!isEnrolled) {
+            throw new RuntimeException("Student is not enrolled in this course");
+        }
+
+        return learningMaterialRepository.findByLessonId(lessonId)
+                .stream()
+                .map(MaterialResponse::new)
+                .collect(Collectors.toList());
     }
 }
