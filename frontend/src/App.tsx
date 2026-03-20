@@ -18,13 +18,24 @@ import SettingsPage from "./pages/student/Settings";
 import TeacherDashboard from "./pages/teacher/Dashboard";
 import MyCourses from "./pages/student/MyCourses";
 import CourseDetail from "./pages/student/CourseDetail";
+import Students from "./pages/teacher/Students";
 import ClassManagement from "./pages/teacher/ClassManagement";
 import ContentUpload from "./pages/teacher/ContentUpload";
 import Timetable from "./pages/teacher/Timetable";
 import TeacherLayout from "./components/TeacherLayout";
 import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 0,                // data is immediately stale → refetch on every mount
+      gcTime: 0,                   // don't keep stale cache entries after unmount
+      refetchOnMount: "always",    // always refetch when component mounts (even if data exists)
+      refetchOnWindowFocus: true,  // refetch when user tabs back / focuses window
+      retry: 2,                    // retry failed requests twice before giving up
+    },
+  },
+});
 
 const App = () => {
   useTheme();
@@ -42,6 +53,7 @@ const App = () => {
             <Route path="/signup" element={<SignUp />} />
             <Route path="/teacher" element={<TeacherLayout />}>
               <Route path="dashboard" element={<TeacherDashboard />} />
+              <Route path="students" element={<Students />} />
               <Route path="classes" element={<ClassManagement />} />
               <Route path="content" element={<ContentUpload />} />
               <Route path="timetable" element={<Timetable />} />

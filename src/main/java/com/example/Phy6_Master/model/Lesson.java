@@ -2,7 +2,12 @@ package com.example.Phy6_Master.model;
 
 import jakarta.persistence.*;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+<<<<<<< Updated upstream
+=======
 import java.util.List;
+import java.util.ArrayList;
+>>>>>>> Stashed changes
 
 @Entity
 @Table(name = "lessons")
@@ -15,52 +20,55 @@ public class Lesson {
     private String title;
 
     @Column(length = 2000)
-    private String content; // Description or text content of the lesson
+    private String content;
+
+    // Month in "YYYY-MM" format, e.g. "2026-03"
+    @Column(length = 7)
+    private String month;
 
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "course_id", nullable = false)
     private Course course;
 
-    public Lesson() {
-    }
+<<<<<<< Updated upstream
+    public Lesson() {}
 
-    public Lesson(Long id, String title, String content, Course course) {
+=======
+    // Cascade delete for learning materials
+    @JsonIgnore
+    @OneToMany(mappedBy = "lesson", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<LearningMaterial> materials = new ArrayList<>();
+
+    public Lesson() {}
+
+>>>>>>> Stashed changes
+    public Lesson(Long id, String title, String content, Course course, String month) {
         this.id = id;
         this.title = title;
         this.content = content;
         this.course = course;
+        this.month = month;
     }
 
-    public Long getId() {
-        return id;
+    // Expose courseId in JSON even though course is @JsonIgnore
+    @JsonProperty("courseId")
+    public Long getCourseId() {
+        return course != null ? course.getId() : null;
     }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
-    public String getContent() {
-        return content;
-    }
-
-    public void setContent(String content) {
-        this.content = content;
-    }
-
-    public Course getCourse() {
-        return course;
-    }
-
-    public void setCourse(Course course) {
-        this.course = course;
-    }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public String getTitle() { return title; }
+    public void setTitle(String title) { this.title = title; }
+    public String getContent() { return content; }
+    public void setContent(String content) { this.content = content; }
+    public String getMonth() { return month; }
+    public void setMonth(String month) { this.month = month; }
+    public Course getCourse() { return course; }
+    public void setCourse(Course course) { this.course = course; }
+<<<<<<< Updated upstream
+=======
+    public List<LearningMaterial> getMaterials() { return materials; }
+>>>>>>> Stashed changes
 }

@@ -1,6 +1,10 @@
 package com.example.Phy6_Master.model;
 
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.util.List;
+import java.util.ArrayList;
 
 @Entity
 @Table(name = "courses")
@@ -17,6 +21,7 @@ public class Course {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "teacher_id", nullable = true)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private User teacher;
 
     private String batch;
@@ -25,6 +30,21 @@ public class Course {
 
     @Column(length = 1000)
     private String imageUrl;
+
+    // Cascade delete for lessons
+    @JsonIgnore
+    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Lesson> lessons = new ArrayList<>();
+
+    // Cascade delete for timetable slots
+    @JsonIgnore
+    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<TimetableSlot> timetableSlots = new ArrayList<>();
+
+    // Cascade delete for enrollments
+    @JsonIgnore
+    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Enrollment> enrollments = new ArrayList<>();
 
     public Course() {
     }
@@ -102,5 +122,17 @@ public class Course {
 
     public void setImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
+    }
+
+    public List<Lesson> getLessons() {
+        return lessons;
+    }
+
+    public List<TimetableSlot> getTimetableSlots() {
+        return timetableSlots;
+    }
+
+    public List<Enrollment> getEnrollments() {
+        return enrollments;
     }
 }
