@@ -29,10 +29,7 @@ export interface TimetableSlot {
   endTime: string;   // "HH:mm:ss"
   location?: string;
   notes?: string;
-<<<<<<< Updated upstream
-=======
   meetingLink?: string;
->>>>>>> Stashed changes
 }
 
 export interface TimetableSlotDTO {
@@ -42,21 +39,15 @@ export interface TimetableSlotDTO {
   endTime: string;   // "HH:mm"
   location?: string;
   notes?: string;
-<<<<<<< Updated upstream
-=======
   meetingLink?: string;
->>>>>>> Stashed changes
 }
 
 export interface Lesson {
   id: number;
   title: string;
   content?: string;
-<<<<<<< Updated upstream
-=======
   month?: string;   // "YYYY-MM" e.g. "2026-03"
   courseId?: number; // exposed from backend @JsonProperty
->>>>>>> Stashed changes
 }
 
 export interface LearningMaterial {
