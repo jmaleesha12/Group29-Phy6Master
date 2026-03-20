@@ -50,7 +50,7 @@ public class CourseController {
     public ResponseEntity<Void> deleteCourse(@PathVariable Long id) {
         try {
             courseService.deleteCourse(id);
-            return ResponseEntity.ok().build();
+            return ResponseEntity.noContent().build();
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }

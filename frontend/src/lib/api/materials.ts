@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { get, del, uploadFile, downloadUrl } from "@/lib/api-client";
 import type { LearningMaterial } from "./types";
-
+//
 export function useMaterials(courseId: number | undefined) {
   return useQuery<LearningMaterial[]>({
     queryKey: ["materials", courseId],
