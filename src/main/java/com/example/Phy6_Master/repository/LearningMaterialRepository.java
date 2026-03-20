@@ -11,4 +11,5 @@ public interface LearningMaterialRepository extends JpaRepository<LearningMateri
 
     List<LearningMaterial> findByLesson(com.example.Phy6_Master.model.Lesson lesson);
 
+    List<LearningMaterial> findByLessonId(Long lessonId);
 }
