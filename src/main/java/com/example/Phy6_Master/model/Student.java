@@ -25,6 +25,7 @@ public class Student {
 
     private String enrollmentNumber;
     private String school;
+    private String grade;
     private String batch;
     private String address;
     private String parentName;

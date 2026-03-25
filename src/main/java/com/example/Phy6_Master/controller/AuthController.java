@@ -42,6 +42,26 @@ public class AuthController {
         }
     }
 
+    @PostMapping("/password-reset/request")
+    public ResponseEntity<?> requestPasswordReset(@Valid @RequestBody PasswordResetRequest request) {
+        try {
+            String token = authService.requestPasswordReset(request);
+            return ResponseEntity.ok(Map.of("message", "Password reset token generated", "token", token));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", ex.getMessage()));
+        }
+    }
+
+    @PostMapping("/password-reset/confirm")
+    public ResponseEntity<?> confirmPasswordReset(@Valid @RequestBody PasswordResetConfirmRequest request) {
+        try {
+            authService.confirmPasswordReset(request);
+            return ResponseEntity.ok(Map.of("message", "Password reset successful"));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", ex.getMessage()));
+        }
+    }
+
     @PostMapping("/signup/student")
     public ResponseEntity<?> signUpStudent(@Valid @RequestBody StudentSignUpRequest request) {
         try {

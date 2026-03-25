@@ -40,6 +40,10 @@ public class User {
 
     private Boolean isActive;
 
+    private String passwordResetToken;
+
+    private java.time.LocalDateTime passwordResetTokenExpiry;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
