@@ -9,11 +9,14 @@ import Classes from "./pages/Classes";
 import About from "./pages/About";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import StudentLayout from "./components/StudentLayout";
 import Dashboard from "./pages/student/Dashboard";
 import StudentClasses from "./pages/student/Classes";
 import Schedule from "./pages/student/Schedule";
 import SettingsPage from "./pages/student/Settings";
+import StudentProfile from "./pages/student/Profile";
 import TeacherDashboard from "./pages/teacher/Dashboard";
 import ClassManagement from "./pages/teacher/ClassManagement";
 import ContentUpload from "./pages/teacher/ContentUpload";
@@ -37,6 +40,8 @@ const App = () => {
             <Route path="/classes" element={<Classes />} />
             <Route path="/signin" element={<SignIn />} />
             <Route path="/signup" element={<SignUp />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/teacher" element={<TeacherLayout />}>
               <Route path="dashboard" element={<TeacherDashboard />} />
               <Route path="classes" element={<ClassManagement />} />
@@ -50,6 +55,7 @@ const App = () => {
               <Route path="classes" element={<StudentClasses />} />
               <Route path="schedule" element={<Schedule />} />
               <Route path="settings" element={<SettingsPage />} />
+              <Route path="profile" element={<StudentProfile />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

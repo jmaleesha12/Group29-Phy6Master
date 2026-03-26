@@ -89,7 +89,9 @@ export default function SignIn() {
               <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
                 <Checkbox checked={remember} onCheckedChange={(c) => setRemember(!!c)} /> Remember me
               </label>
-              <span className="text-sm text-primary cursor-pointer hover:underline">Forgot Password?</span>
+              <Link to="/forgot-password">
+                <span className="text-sm text-primary cursor-pointer hover:underline">Forgot Password?</span>
+              </Link>
             </div>
 
             <Button type="submit" disabled={isSubmitting} className="w-full gradient-cta text-primary-foreground font-semibold py-3 text-base flex items-center justify-center gap-2">

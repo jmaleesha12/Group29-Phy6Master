@@ -10,7 +10,7 @@ const sidebarLinks = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/student/dashboard" },
   { label: "Classes", icon: BookOpen, path: "/student/classes" },
   { label: "Schedule", icon: Calendar, path: "/student/schedule" },
-  { label: "Profile", icon: User, path: "/student/settings" },
+  { label: "Profile", icon: User, path: "/student/profile" },
 ];
 
 export default function StudentLayout() {
@@ -87,7 +87,7 @@ export default function StudentLayout() {
                 {profileOpen && (
                   <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }}
                     className="absolute right-0 top-full mt-2 w-48 rounded-xl border border-border bg-card shadow-card p-2 z-50">
-                    <Link to="/student/settings" className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-foreground hover:bg-accent"><User className="h-4 w-4" /> Profile</Link>
+                    <Link to="/student/profile" className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-foreground hover:bg-accent"><User className="h-4 w-4" /> Profile</Link>
                     <hr className="my-1 border-border" />
                     <button onClick={handleLogout} className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-destructive hover:bg-accent w-full"><LogOut className="h-4 w-4" /> Sign Out</button>
                   </motion.div>

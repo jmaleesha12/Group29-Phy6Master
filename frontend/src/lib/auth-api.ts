@@ -8,6 +8,11 @@ export type AuthResponse = {
   message: string;
 };
 
+export type PasswordResetResponse = {
+  message: string;
+  token?: string;
+};
+
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "";
 
 async function request<T>(path: string, body: unknown): Promise<T> {
@@ -37,5 +42,16 @@ export function signUp(name: string, username: string, password: string) {
     name,
     username,
     password,
+  });
+}
+
+export function requestPasswordReset(email: string) {
+  return request<PasswordResetResponse>("/api/auth/password-reset/request", { email });
+}
+
+export function confirmPasswordReset(token: string, newPassword: string) {
+  return request<PasswordResetResponse>("/api/auth/password-reset/confirm", { 
+    token, 
+    newPassword 
   });
 }
