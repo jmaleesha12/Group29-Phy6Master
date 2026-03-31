@@ -1,32 +1,44 @@
 package com.example.Phy6_Master.service;
 
-import com.example.Phy6_Master.dto.AddQuestionRequest;
-import com.example.Phy6_Master.dto.CreateQuizRequest;
-import com.example.Phy6_Master.dto.QuizResponse;
-import com.example.Phy6_Master.dto.UpdateQuestionRequest;
-import com.example.Phy6_Master.dto.UpdateQuizRequest;
+import com.example.Phy6_Master.dto.quiz.AnswerOptionRequestDto;
+import com.example.Phy6_Master.dto.quiz.AnswerOptionResponseDto;
+import com.example.Phy6_Master.dto.quiz.QuestionRequestDto;
+import com.example.Phy6_Master.dto.quiz.QuestionResponseDto;
+import com.example.Phy6_Master.dto.quiz.QuestionUpdateRequestDto;
+import com.example.Phy6_Master.dto.quiz.QuizCreateRequestDto;
+import com.example.Phy6_Master.dto.quiz.QuizResponseDto;
+import com.example.Phy6_Master.dto.quiz.QuizUpdateRequestDto;
+import com.example.Phy6_Master.exception.BadRequestException;
+import com.example.Phy6_Master.exception.ForbiddenException;
+import com.example.Phy6_Master.exception.NotFoundException;
+import com.example.Phy6_Master.exception.ValidationException;
+import com.example.Phy6_Master.model.AnswerOption;
 import com.example.Phy6_Master.model.Course;
+import com.example.Phy6_Master.model.Enrollment;
 import com.example.Phy6_Master.model.Lesson;
-import com.example.Phy6_Master.model.Option;
 import com.example.Phy6_Master.model.Question;
 import com.example.Phy6_Master.model.Quiz;
+import com.example.Phy6_Master.model.QuizStatus;
 import com.example.Phy6_Master.model.User;
 import com.example.Phy6_Master.repository.CourseRepository;
+import com.example.Phy6_Master.repository.EnrollmentRepository;
 import com.example.Phy6_Master.repository.LessonRepository;
-import com.example.Phy6_Master.repository.OptionRepository;
 import com.example.Phy6_Master.repository.QuestionRepository;
 import com.example.Phy6_Master.repository.QuizRepository;
 import com.example.Phy6_Master.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.Map;
+import java.util.Objects;
 
 @Service
-@Transactional
 public class QuizService {
 
     @Autowired
@@ -34,9 +46,6 @@ public class QuizService {
 
     @Autowired
     private QuestionRepository questionRepository;
-
-    @Autowired
-    private OptionRepository optionRepository;
 
     @Autowired
     private CourseRepository courseRepository;
@@ -47,375 +56,334 @@ public class QuizService {
     @Autowired
     private UserRepository userRepository;
 
-    /**
-     * Create a new quiz with questions
-     */
-    public Quiz createQuiz(Long teacherId, CreateQuizRequest request) {
-        // Validate teacher exists and is a teacher
-        User teacher = userRepository.findById(teacherId)
-                .orElseThrow(() -> new IllegalArgumentException("Teacher not found with id: " + teacherId));
+    @Autowired
+    private EnrollmentRepository enrollmentRepository;
 
-        if (teacher.getRole() != User.Role.TEACHER) {
-            throw new IllegalArgumentException("User is not a teacher");
-        }
+    @Transactional
+    public QuizResponseDto createQuiz(QuizCreateRequestDto request) {
+        validateQuizRequest(request);
+        User teacher = loadTeacher(request.getTeacherId());
+        Course linkedCourse = resolveLinkedCourse(request.getCourseId(), request.getLessonId());
+        Lesson linkedLesson = resolveOptionalLesson(request.getLessonId());
 
-        // Validate course exists
-        Course course = courseRepository.findById(request.getCourseId())
-                .orElseThrow(() -> new IllegalArgumentException("Course not found with id: " + request.getCourseId()));
+        assertTeacherOwnsCourse(teacher, linkedCourse);
 
-        // Validate course belongs to teacher (if course has a teacher assigned)
-        if (course.getTeacher() != null && !course.getTeacher().getId().equals(teacherId)) {
-            throw new IllegalArgumentException("Teacher can only create quizzes for their own courses");
-        }
-
-        // Validate lesson exists if provided
-        Lesson lesson = null;
-        if (request.getLessonId() != null) {
-            lesson = lessonRepository.findById(request.getLessonId())
-                    .orElseThrow(() -> new IllegalArgumentException("Lesson not found with id: " + request.getLessonId()));
-
-            // Validate lesson belongs to course
-            if (!lesson.getCourse().getId().equals(request.getCourseId())) {
-                throw new IllegalArgumentException("Lesson does not belong to the specified course");
-            }
-        }
-
-        // Create quiz
         Quiz quiz = new Quiz();
-        quiz.setTitle(request.getTitle());
-        quiz.setDescription(request.getDescription());
-        quiz.setCourse(course);
-        quiz.setLesson(lesson);
-        quiz.setTeacher(teacher);
-        quiz.setPassingScore(request.getPassingScore() != null ? request.getPassingScore() : 60);
-        quiz.setIsPublished(request.getIsPublished() != null ? request.getIsPublished() : false);
-        quiz.setAllowReview(request.getAllowReview() != null ? request.getAllowReview() : true);
-        quiz.setTimeLimit(request.getTimeLimit());
-        quiz.setTotalQuestions(0);
+        quiz.setTitle(request.getTitle().trim());
+        quiz.setCourse(linkedCourse);
+        quiz.setLesson(linkedLesson);
+        quiz.setStatus(request.getStatus() != null ? request.getStatus() : QuizStatus.DRAFT);
 
-        quiz = quizRepository.save(quiz);
+        List<Question> questions = buildQuestionsForQuiz(quiz, request.getQuestions());
+        quiz.setQuestions(questions);
 
-        // Add questions
-        if (request.getQuestions() != null && !request.getQuestions().isEmpty()) {
-            for (int i = 0; i < request.getQuestions().size(); i++) {
-                CreateQuizRequest.QuestionRequest qReq = request.getQuestions().get(i);
-                addQuestionToQuiz(quiz, qReq, i);
-            }
-            quiz.setTotalQuestions(request.getQuestions().size());
-            quiz = quizRepository.save(quiz);
-        }
-
-        return quiz;
+        Quiz saved = quizRepository.save(quiz);
+        return toResponse(saved);
     }
 
-    /**
-     * Helper method to add a question to a quiz
-     */
-    private void addQuestionToQuiz(Quiz quiz, CreateQuizRequest.QuestionRequest qReq, int index) {
-        if (qReq.getOptions() == null || qReq.getOptions().isEmpty()) {
-            throw new IllegalArgumentException("Each question must have at least one option");
+    @Transactional(readOnly = true)
+    public QuizResponseDto getQuizById(Long quizId, Long teacherId, Long studentId) {
+        Quiz quiz = loadQuiz(quizId);
+
+        if (teacherId != null) {
+            User teacher = loadTeacher(teacherId);
+            assertTeacherOwnsCourse(teacher, quiz.getCourse());
         }
 
-        if (qReq.getCorrectOptionIndex() < 0 || qReq.getCorrectOptionIndex() >= qReq.getOptions().size()) {
-            throw new IllegalArgumentException("Correct option index is out of range");
+        if (studentId != null) {
+            ensureStudentCanView(studentId, quiz);
         }
 
-        Question question = new Question();
-        question.setQuiz(quiz);
-        question.setQuestionText(qReq.getQuestionText());
-        question.setQuestionOrder(qReq.getQuestionOrder() != null ? qReq.getQuestionOrder() : index);
-        question.setExplanation(qReq.getExplanation());
-        question.setPoints(qReq.getPoints() != null ? qReq.getPoints() : 1.0);
-
-        question = questionRepository.save(question);
-
-        // Add options
-        Long correctOptionId = null;
-        for (int i = 0; i < qReq.getOptions().size(); i++) {
-            CreateQuizRequest.OptionRequest oReq = qReq.getOptions().get(i);
-
-            Option option = new Option();
-            option.setQuestion(question);
-            option.setOptionText(oReq.getOptionText());
-            option.setOptionOrder(oReq.getOptionOrder() != null ? oReq.getOptionOrder() : i + 1);
-            option.setExplanation(oReq.getExplanation());
-
-            option = optionRepository.save(option);
-
-            // Track correct option
-            if (i == qReq.getCorrectOptionIndex()) {
-                correctOptionId = option.getId();
-            }
-        }
-
-        // Update question with correct option
-        question.setCorrectOptionId(correctOptionId);
-        questionRepository.save(question);
+        return toResponse(quiz);
     }
 
-    /**
-     * Get quiz by ID with full details
-     */
-    public Quiz getQuizById(Long quizId) {
-        return quizRepository.findById(quizId)
-                .orElseThrow(() -> new IllegalArgumentException("Quiz not found with id: " + quizId));
+    @Transactional
+    public QuizResponseDto updateQuiz(Long quizId, QuizUpdateRequestDto request) {
+        validateQuizRequest(request);
+        User teacher = loadTeacher(request.getTeacherId());
+        Quiz quiz = loadQuiz(quizId);
+
+        Course linkedCourse = resolveLinkedCourse(request.getCourseId(), request.getLessonId());
+        Lesson linkedLesson = resolveOptionalLesson(request.getLessonId());
+
+        assertTeacherOwnsCourse(teacher, quiz.getCourse());
+        assertTeacherOwnsCourse(teacher, linkedCourse);
+
+        quiz.setTitle(request.getTitle().trim());
+        quiz.setCourse(linkedCourse);
+        quiz.setLesson(linkedLesson);
+        if (request.getStatus() != null) {
+            quiz.setStatus(request.getStatus());
+        }
+
+        quiz.getQuestions().clear();
+        List<Question> questions = buildQuestionsForQuiz(quiz, request.getQuestions());
+        quiz.getQuestions().addAll(questions);
+
+        Quiz saved = quizRepository.save(quiz);
+        return toResponse(saved);
     }
 
-    /**
-     * Get all quizzes for a course
-     */
-    public List<Quiz> getQuizzesByCourse(Long courseId) {
-        return quizRepository.findByCourse_IdOrderByCreatedAtDesc(courseId);
-    }
-
-    /**
-     * Get published quizzes for a course (visible to students)
-     */
-    public List<Quiz> getPublishedQuizzesByCourse(Long courseId) {
-        return quizRepository.findByCourse_IdAndIsPublishedTrue(courseId);
-    }
-
-    /**
-     * Get quizzes created by a teacher
-     */
-    public List<Quiz> getQuizzesByTeacher(Long teacherId) {
-        return quizRepository.findByTeacher_Id(teacherId);
-    }
-
-    /**
-     * Update quiz details
-     */
-    public Quiz updateQuiz(Long quizId, Long teacherId, UpdateQuizRequest request) {
-        Quiz quiz = quizRepository.findByIdAndTeacher_Id(quizId, teacherId)
-                .orElseThrow(() -> new IllegalArgumentException("Quiz not found or unauthorized"));
-
-        if (request.getTitle() != null) {
-            quiz.setTitle(request.getTitle());
-        }
-        if (request.getDescription() != null) {
-            quiz.setDescription(request.getDescription());
-        }
-        if (request.getPassingScore() != null) {
-            quiz.setPassingScore(request.getPassingScore());
-        }
-        if (request.getIsPublished() != null) {
-            quiz.setIsPublished(request.getIsPublished());
-        }
-        if (request.getAllowReview() != null) {
-            quiz.setAllowReview(request.getAllowReview());
-        }
-        if (request.getTimeLimit() != null) {
-            quiz.setTimeLimit(request.getTimeLimit());
-        }
-
-        return quizRepository.save(quiz);
-    }
-
-    /**
-     * Delete a quiz and all its questions
-     */
+    @Transactional
     public void deleteQuiz(Long quizId, Long teacherId) {
-        Quiz quiz = quizRepository.findByIdAndTeacher_Id(quizId, teacherId)
-                .orElseThrow(() -> new IllegalArgumentException("Quiz not found or unauthorized"));
-
+        User teacher = loadTeacher(teacherId);
+        Quiz quiz = loadQuiz(quizId);
+        assertTeacherOwnsCourse(teacher, quiz.getCourse());
         quizRepository.delete(quiz);
     }
 
-    /**
-     * Add a question to an existing quiz
-     */
-    public Question addQuestion(Long quizId, Long teacherId, AddQuestionRequest request) {
-        Quiz quiz = quizRepository.findByIdAndTeacher_Id(quizId, teacherId)
-                .orElseThrow(() -> new IllegalArgumentException("Quiz not found or unauthorized"));
+    @Transactional
+    public QuestionResponseDto addQuestion(Long quizId, Long teacherId, QuestionRequestDto request) {
+        Quiz quiz = loadQuiz(quizId);
+        User teacher = loadTeacher(teacherId);
+        assertTeacherOwnsCourse(teacher, quiz.getCourse());
+        validateQuestionRequest(request, "questions[0]");
 
-        if (request.getOptions() == null || request.getOptions().isEmpty()) {
-            throw new IllegalArgumentException("Each question must have at least one option");
+        Question question = buildQuestion(quiz, request);
+        Question saved = questionRepository.save(question);
+        return toResponse(saved);
+    }
+
+    @Transactional
+    public QuestionResponseDto updateQuestion(Long questionId, QuestionUpdateRequestDto request) {
+        if (request.getTeacherId() == null) {
+            throw new BadRequestException("teacherId is required");
+        }
+        validateQuestionRequest(request, "question");
+
+        Question question = questionRepository.findById(questionId)
+                .orElseThrow(() -> new NotFoundException("Question not found with id: " + questionId));
+
+        User teacher = loadTeacher(request.getTeacherId());
+        assertTeacherOwnsCourse(teacher, question.getQuiz().getCourse());
+
+        question.setText(request.getText().trim());
+        question.getAnswerOptions().clear();
+        question.getAnswerOptions().addAll(buildOptions(question, request.getOptions()));
+
+        Question saved = questionRepository.save(question);
+        return toResponse(saved);
+    }
+
+    @Transactional
+    public void deleteQuestion(Long questionId, Long teacherId) {
+        User teacher = loadTeacher(teacherId);
+        Question question = questionRepository.findById(questionId)
+                .orElseThrow(() -> new NotFoundException("Question not found with id: " + questionId));
+
+        assertTeacherOwnsCourse(teacher, question.getQuiz().getCourse());
+        questionRepository.delete(question);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<QuizResponseDto> getVisibleQuizzesForStudent(Long studentId, int page, int size) {
+        User student = loadStudent(studentId);
+        List<Enrollment> enrollments = enrollmentRepository.findByStudent(student);
+        List<Course> courses = enrollments.stream().map(Enrollment::getCourse).toList();
+
+        if (courses.isEmpty()) {
+            return Page.empty(PageRequest.of(page, size));
         }
 
-        if (request.getCorrectOptionIndex() < 0 || request.getCorrectOptionIndex() >= request.getOptions().size()) {
-            throw new IllegalArgumentException("Correct option index is out of range");
-        }
+        return quizRepository.findByCourseInAndStatus(courses, QuizStatus.PUBLISHED, PageRequest.of(page, size))
+                .map(this::toResponse);
+    }
 
+    @Transactional(readOnly = true)
+    public List<QuizResponseDto> getQuizzesForTeacher(Long teacherId) {
+        User teacher = loadTeacher(teacherId);
+        return quizRepository.findByCourse_Teacher_IdOrderByUpdatedAtDesc(teacher.getId())
+                .stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    private Quiz loadQuiz(Long quizId) {
+        return quizRepository.findById(quizId)
+                .orElseThrow(() -> new NotFoundException("Quiz not found with id: " + quizId));
+    }
+
+    private User loadTeacher(Long teacherId) {
+        if (teacherId == null) {
+            throw new BadRequestException("teacherId is required");
+        }
+        User teacher = userRepository.findById(teacherId)
+                .orElseThrow(() -> new NotFoundException("Teacher not found with id: " + teacherId));
+        if (teacher.getRole() != User.Role.TEACHER) {
+            throw new ForbiddenException("User is not a teacher");
+        }
+        return teacher;
+    }
+
+    private User loadStudent(Long studentId) {
+        User student = userRepository.findById(studentId)
+                .orElseThrow(() -> new NotFoundException("Student not found with id: " + studentId));
+        if (student.getRole() != User.Role.STUDENT) {
+            throw new ForbiddenException("User is not a student");
+        }
+        return student;
+    }
+
+    private Course resolveLinkedCourse(Long courseId, Long lessonId) {
+        if (courseId == null && lessonId == null) {
+            throw new BadRequestException("Either courseId or lessonId must be provided");
+        }
+        if (courseId != null && lessonId != null) {
+            Lesson lesson = resolveOptionalLesson(lessonId);
+            if (!Objects.equals(lesson.getCourse().getId(), courseId)) {
+                throw new BadRequestException("Provided courseId does not match lesson's course");
+            }
+            return lesson.getCourse();
+        }
+        if (courseId != null) {
+            return courseRepository.findById(courseId)
+                    .orElseThrow(() -> new NotFoundException("Course not found with id: " + courseId));
+        }
+        return resolveOptionalLesson(lessonId).getCourse();
+    }
+
+    private Lesson resolveOptionalLesson(Long lessonId) {
+        if (lessonId == null) {
+            return null;
+        }
+        return lessonRepository.findById(lessonId)
+                .orElseThrow(() -> new NotFoundException("Lesson not found with id: " + lessonId));
+    }
+
+    private void assertTeacherOwnsCourse(User teacher, Course course) {
+        if (course.getTeacher() == null || !Objects.equals(course.getTeacher().getId(), teacher.getId())) {
+            throw new ForbiddenException("Teacher can only manage quizzes for their own classes");
+        }
+    }
+
+    private void ensureStudentCanView(Long studentId, Quiz quiz) {
+        User student = loadStudent(studentId);
+        boolean enrolled = enrollmentRepository.existsByStudentAndCourse(student, quiz.getCourse());
+        if (!enrolled) {
+            throw new ForbiddenException("Student is not enrolled in the linked class");
+        }
+        if (quiz.getStatus() != QuizStatus.PUBLISHED) {
+            throw new ForbiddenException("Quiz is not published for students");
+        }
+    }
+
+    private List<Question> buildQuestionsForQuiz(Quiz quiz, List<QuestionRequestDto> questionDtos) {
+        List<Question> questions = new ArrayList<>();
+        for (QuestionRequestDto questionDto : questionDtos) {
+            questions.add(buildQuestion(quiz, questionDto));
+        }
+        return questions;
+    }
+
+    private Question buildQuestion(Quiz quiz, QuestionRequestDto dto) {
         Question question = new Question();
         question.setQuiz(quiz);
-        question.setQuestionText(request.getQuestionText());
-        question.setQuestionOrder(request.getQuestionOrder() != null ? request.getQuestionOrder() : quiz.getTotalQuestions());
-        question.setExplanation(request.getExplanation());
-        question.setPoints(request.getPoints() != null ? request.getPoints() : 1.0);
-
-        question = questionRepository.save(question);
-
-        // Add options
-        Long correctOptionId = null;
-        for (int i = 0; i < request.getOptions().size(); i++) {
-            AddQuestionRequest.AddOptionRequest oReq = request.getOptions().get(i);
-
-            Option option = new Option();
-            option.setQuestion(question);
-            option.setOptionText(oReq.getOptionText());
-            option.setOptionOrder(oReq.getOptionOrder() != null ? oReq.getOptionOrder() : i + 1);
-            option.setExplanation(oReq.getExplanation());
-
-            option = optionRepository.save(option);
-
-            if (i == request.getCorrectOptionIndex()) {
-                correctOptionId = option.getId();
-            }
-        }
-
-        // Update question with correct option
-        question.setCorrectOptionId(correctOptionId);
-        question = questionRepository.save(question);
-
-        // Update total questions count
-        quiz.setTotalQuestions(quiz.getTotalQuestions() + 1);
-        quizRepository.save(quiz);
-
+        question.setText(dto.getText().trim());
+        question.setAnswerOptions(buildOptions(question, dto.getOptions()));
         return question;
     }
 
-    /**
-     * Get a specific question by ID
-     */
-    public Question getQuestion(Long questionId) {
-        return questionRepository.findById(questionId)
-                .orElseThrow(() -> new IllegalArgumentException("Question not found with id: " + questionId));
-    }
-
-    /**
-     * Update a specific question
-     */
-    public Question updateQuestion(Long quizId, Long questionId, Long teacherId, UpdateQuestionRequest request) {
-        // Verify authorization
-        Quiz quiz = quizRepository.findByIdAndTeacher_Id(quizId, teacherId)
-                .orElseThrow(() -> new IllegalArgumentException("Quiz not found or unauthorized"));
-
-        Question question = questionRepository.findByIdAndQuiz_Id(questionId, quizId)
-                .orElseThrow(() -> new IllegalArgumentException("Question not found in the specified quiz"));
-
-        // Validate options
-        if (request.getOptions() == null || request.getOptions().isEmpty()) {
-            throw new IllegalArgumentException("Each question must have at least one option");
-        }
-
-        // Update question text
-        question.setQuestionText(request.getQuestionText());
-
-        if (request.getQuestionOrder() != null) {
-            question.setQuestionOrder(request.getQuestionOrder());
-        }
-
-        if (request.getExplanation() != null) {
-            question.setExplanation(request.getExplanation());
-        }
-
-        if (request.getPoints() != null) {
-            question.setPoints(request.getPoints());
-        }
-
-        // Handle options: delete old ones and create new ones
-        question.getOptions().clear();
-
-        for (int i = 0; i < request.getOptions().size(); i++) {
-            UpdateQuestionRequest.UpdateOptionRequest oReq = request.getOptions().get(i);
-
-            Option option = new Option();
+    private List<AnswerOption> buildOptions(Question question, List<AnswerOptionRequestDto> optionDtos) {
+        List<AnswerOption> options = new ArrayList<>();
+        for (AnswerOptionRequestDto optionDto : optionDtos) {
+            AnswerOption option = new AnswerOption();
             option.setQuestion(question);
-            option.setOptionText(oReq.getOptionText());
-            option.setOptionOrder(oReq.getOptionOrder() != null ? oReq.getOptionOrder() : i + 1);
-            option.setExplanation(oReq.getExplanation());
-
-            optionRepository.save(option);
-            question.getOptions().add(option);
+            option.setText(optionDto.getText().trim());
+            option.setCorrect(Boolean.TRUE.equals(optionDto.getCorrect()));
+            options.add(option);
         }
-
-        // Update correct option
-        Long correctOptionId = request.getCorrectOptionId();
-        boolean isValidOption = question.getOptions().stream()
-                .anyMatch(opt -> opt.getId().equals(correctOptionId));
-
-        if (!isValidOption) {
-            throw new IllegalArgumentException("Correct option ID does not belong to this question");
-        }
-
-        question.setCorrectOptionId(correctOptionId);
-
-        return questionRepository.save(question);
+        return options;
     }
 
-    /**
-     * Delete a specific question
-     */
-    public void deleteQuestion(Long quizId, Long questionId, Long teacherId) {
-        // Verify authorization
-        Quiz quiz = quizRepository.findByIdAndTeacher_Id(quizId, teacherId)
-                .orElseThrow(() -> new IllegalArgumentException("Quiz not found or unauthorized"));
+    private void validateQuizRequest(QuizCreateRequestDto request) {
+        Map<String, String> errors = new LinkedHashMap<>();
 
-        Question question = questionRepository.findByIdAndQuiz_Id(questionId, quizId)
-                .orElseThrow(() -> new IllegalArgumentException("Question not found in the specified quiz"));
+        if (request.getTitle() == null || request.getTitle().trim().isEmpty()) {
+            errors.put("title", "Quiz title is required");
+        }
 
-        questionRepository.delete(question);
+        if (request.getCourseId() == null && request.getLessonId() == null) {
+            errors.put("link", "Either class (courseId) or lessonId is required");
+        }
 
-        // Update total questions count
-        quiz.setTotalQuestions(quiz.getTotalQuestions() - 1);
-        quizRepository.save(quiz);
+        if (request.getQuestions() == null || request.getQuestions().isEmpty()) {
+            errors.put("questions", "At least one question is required");
+        } else {
+            for (int i = 0; i < request.getQuestions().size(); i++) {
+                validateQuestionRequest(request.getQuestions().get(i), "questions[" + i + "]", errors);
+            }
+        }
+
+        if (!errors.isEmpty()) {
+            throw new ValidationException("Validation failed", errors);
+        }
     }
 
-    /**
-     * Convert Quiz entity to QuizResponse DTO
-     */
-    public QuizResponse convertToResponse(Quiz quiz) {
-        QuizResponse response = new QuizResponse();
+    private void validateQuestionRequest(QuestionRequestDto request, String prefix) {
+        Map<String, String> errors = new LinkedHashMap<>();
+        validateQuestionRequest(request, prefix, errors);
+        if (!errors.isEmpty()) {
+            throw new ValidationException("Validation failed", errors);
+        }
+    }
+
+    private void validateQuestionRequest(QuestionRequestDto request, String prefix, Map<String, String> errors) {
+        if (request.getText() == null || request.getText().trim().isEmpty()) {
+            errors.put(prefix + ".text", "Question text is required");
+        }
+
+        if (request.getOptions() == null || request.getOptions().size() < 2) {
+            errors.put(prefix + ".options", "At least 2 answer options are required");
+            return;
+        }
+
+        int correctCount = 0;
+        for (int i = 0; i < request.getOptions().size(); i++) {
+            AnswerOptionRequestDto option = request.getOptions().get(i);
+            String key = prefix + ".options[" + i + "]";
+
+            if (option.getText() == null || option.getText().trim().isEmpty()) {
+                errors.put(key + ".text", "Answer option text is required");
+            }
+            if (Boolean.TRUE.equals(option.getCorrect())) {
+                correctCount++;
+            }
+        }
+
+        if (correctCount == 0) {
+            errors.put(prefix + ".correct", "One correct answer must be selected");
+        }
+        if (correctCount > 1) {
+            errors.put(prefix + ".correct", "Only one correct answer is allowed");
+        }
+    }
+
+    private QuizResponseDto toResponse(Quiz quiz) {
+        QuizResponseDto response = new QuizResponseDto();
         response.setId(quiz.getId());
         response.setTitle(quiz.getTitle());
-        response.setDescription(quiz.getDescription());
-        response.setCourseId(quiz.getCourseId());
-        response.setLessonId(quiz.getLessonId());
-        response.setTeacherId(quiz.getTeacherId());
-        response.setTotalQuestions(quiz.getTotalQuestions());
-        response.setPassingScore(quiz.getPassingScore());
-        response.setIsPublished(quiz.getIsPublished());
-        response.setAllowReview(quiz.getAllowReview());
-        response.setTimeLimit(quiz.getTimeLimit());
+        response.setCourseId(quiz.getCourse() != null ? quiz.getCourse().getId() : null);
+        response.setLessonId(quiz.getLesson() != null ? quiz.getLesson().getId() : null);
+        response.setStatus(quiz.getStatus());
         response.setCreatedAt(quiz.getCreatedAt());
         response.setUpdatedAt(quiz.getUpdatedAt());
-
-        // Convert questions
-        List<QuizResponse.QuestionResponse> questionResponses = quiz.getQuestions().stream()
-                .map(this::convertQuestionToResponse)
-                .collect(Collectors.toList());
-        response.setQuestions(questionResponses);
-
+        response.setQuestions(quiz.getQuestions().stream().map(this::toResponse).toList());
         return response;
     }
 
-    private QuizResponse.QuestionResponse convertQuestionToResponse(Question question) {
-        QuizResponse.QuestionResponse qResponse = new QuizResponse.QuestionResponse();
-        qResponse.setId(question.getId());
-        qResponse.setQuestionText(question.getQuestionText());
-        qResponse.setQuestionOrder(question.getQuestionOrder());
-        qResponse.setQuizId(question.getQuizId());
-        qResponse.setCorrectOptionId(question.getCorrectOptionId());
-        qResponse.setExplanation(question.getExplanation());
-        qResponse.setPoints(question.getPoints());
-
-        // Convert options
-        List<QuizResponse.QuestionResponse.OptionResponse> optionResponses = question.getOptions().stream()
-                .map(this::convertOptionToResponse)
-                .collect(Collectors.toList());
-        qResponse.setOptions(optionResponses);
-
-        return qResponse;
+    private QuestionResponseDto toResponse(Question question) {
+        QuestionResponseDto response = new QuestionResponseDto();
+        response.setId(question.getId());
+        response.setText(question.getText());
+        response.setOptions(question.getAnswerOptions().stream().map(this::toResponse).toList());
+        return response;
     }
 
-    private QuizResponse.QuestionResponse.OptionResponse convertOptionToResponse(Option option) {
-        QuizResponse.QuestionResponse.OptionResponse oResponse = new QuizResponse.QuestionResponse.OptionResponse();
-        oResponse.setId(option.getId());
-        oResponse.setOptionText(option.getOptionText());
-        oResponse.setOptionOrder(option.getOptionOrder());
-        oResponse.setQuestionId(option.getQuestionId());
-        oResponse.setExplanation(option.getExplanation());
-
-        return oResponse;
+    private AnswerOptionResponseDto toResponse(AnswerOption option) {
+        AnswerOptionResponseDto response = new AnswerOptionResponseDto();
+        response.setId(option.getId());
+        response.setText(option.getText());
+        response.setCorrect(option.isCorrect());
+        return response;
     }
 }

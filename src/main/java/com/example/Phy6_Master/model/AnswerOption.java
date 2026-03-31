@@ -1,7 +1,6 @@
 package com.example.Phy6_Master.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -10,31 +9,26 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
-import java.util.ArrayList;
-import java.util.List;
-
 @Entity
-@Table(name = "questions")
-public class Question {
+@Table(name = "answer_options")
+public class AnswerOption {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "quiz_id", nullable = false)
+    @JoinColumn(name = "question_id", nullable = false)
     @JsonIgnore
-    private Quiz quiz;
+    private Question question;
 
-    @Column(nullable = false, length = 2000)
+    @Column(nullable = false, length = 1000)
     private String text;
 
-    @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonIgnore
-    private List<AnswerOption> answerOptions = new ArrayList<>();
+    @Column(nullable = false)
+    private boolean isCorrect;
 
     public Long getId() {
         return id;
@@ -44,12 +38,12 @@ public class Question {
         this.id = id;
     }
 
-    public Quiz getQuiz() {
-        return quiz;
+    public Question getQuestion() {
+        return question;
     }
 
-    public void setQuiz(Quiz quiz) {
-        this.quiz = quiz;
+    public void setQuestion(Question question) {
+        this.question = question;
     }
 
     public String getText() {
@@ -60,11 +54,11 @@ public class Question {
         this.text = text;
     }
 
-    public List<AnswerOption> getAnswerOptions() {
-        return answerOptions;
+    public boolean isCorrect() {
+        return isCorrect;
     }
 
-    public void setAnswerOptions(List<AnswerOption> answerOptions) {
-        this.answerOptions = answerOptions;
+    public void setCorrect(boolean correct) {
+        isCorrect = correct;
     }
 }

@@ -32,10 +32,18 @@ export function signIn(username: string, password: string) {
   return request<AuthResponse>("/api/auth/signin", { username, password });
 }
 
-export function signUp(name: string, username: string, password: string) {
+export function signUp(
+  name: string,
+  email: string,
+  username: string,
+  phoneNumber: string,
+  password: string
+) {
   return request<AuthResponse>("/api/auth/signup", {
     name,
+    email,
     username,
+    phoneNumber,
     password,
   });
 }
