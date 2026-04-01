@@ -1,10 +1,11 @@
 package com.example.Phy6_Master.repository;
 
-import com.example.Phy6_Master.model.QuizSession;
-import com.example.Phy6_Master.model.QuizSessionStatus;
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import java.util.Optional;
+import com.example.Phy6_Master.model.QuizSession;
+import com.example.Phy6_Master.model.QuizSessionStatus;
 
 public interface QuizSessionRepository extends JpaRepository<QuizSession, Long> {
     Optional<QuizSession> findByIdAndStudent_Id(Long id, Long studentId);

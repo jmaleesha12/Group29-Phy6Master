@@ -1,12 +1,5 @@
 package com.example.Phy6_Master.controller;
 
-import com.example.Phy6_Master.dto.quiz.AnswerCurrentQuestionRequestDto;
-import com.example.Phy6_Master.dto.quiz.CurrentQuestionResponseDto;
-import com.example.Phy6_Master.dto.quiz.QuizSessionResponseDto;
-import com.example.Phy6_Master.dto.quiz.SessionActionRequestDto;
-import com.example.Phy6_Master.dto.quiz.StartQuizSessionRequestDto;
-import com.example.Phy6_Master.service.QuizSessionService;
-import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,6 +9,16 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.example.Phy6_Master.dto.quiz.AnswerCurrentQuestionRequestDto;
+import com.example.Phy6_Master.dto.quiz.CurrentQuestionResponseDto;
+import com.example.Phy6_Master.dto.quiz.QuizResultResponseDto;
+import com.example.Phy6_Master.dto.quiz.QuizSessionResponseDto;
+import com.example.Phy6_Master.dto.quiz.SessionActionRequestDto;
+import com.example.Phy6_Master.dto.quiz.StartQuizSessionRequestDto;
+import com.example.Phy6_Master.service.QuizSessionService;
+
+import io.swagger.v3.oas.annotations.Operation;
 
 @RestController
 @RequestMapping("/api/quiz-sessions")
@@ -68,10 +71,19 @@ public class QuizSessionController {
 
     @Operation(summary = "Submit quiz session")
     @PostMapping("/{id}/submit")
-    public ResponseEntity<QuizSessionResponseDto> submitSession(
+    public ResponseEntity<QuizResultResponseDto> submitSession(
             @PathVariable Long id,
             @RequestBody SessionActionRequestDto request
     ) {
         return ResponseEntity.ok(quizSessionService.submitSession(id, request.getStudentId()));
+    }
+
+    @Operation(summary = "Get quiz result for a completed session")
+    @GetMapping("/{id}/result")
+    public ResponseEntity<QuizResultResponseDto> getSessionResult(
+            @PathVariable Long id,
+            @RequestParam Long studentId
+    ) {
+        return ResponseEntity.ok(quizSessionService.getResult(id, studentId));
     }
 }

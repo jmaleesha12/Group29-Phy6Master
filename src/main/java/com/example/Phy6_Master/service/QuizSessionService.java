@@ -1,9 +1,22 @@
 package com.example.Phy6_Master.service;
 
+import java.time.LocalDateTime;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.example.Phy6_Master.dto.quiz.AnswerCurrentQuestionRequestDto;
 import com.example.Phy6_Master.dto.quiz.CurrentQuestionResponseDto;
 import com.example.Phy6_Master.dto.quiz.OptionForPlayResponseDto;
 import com.example.Phy6_Master.dto.quiz.QuestionForPlayResponseDto;
+import com.example.Phy6_Master.dto.quiz.QuizResultResponseDto;
 import com.example.Phy6_Master.dto.quiz.QuizSessionResponseDto;
 import com.example.Phy6_Master.dto.quiz.StartQuizSessionRequestDto;
 import com.example.Phy6_Master.exception.BadRequestException;
@@ -12,25 +25,17 @@ import com.example.Phy6_Master.exception.NotFoundException;
 import com.example.Phy6_Master.model.AnswerOption;
 import com.example.Phy6_Master.model.Question;
 import com.example.Phy6_Master.model.Quiz;
+import com.example.Phy6_Master.model.QuizResult;
 import com.example.Phy6_Master.model.QuizSession;
 import com.example.Phy6_Master.model.QuizSessionStatus;
 import com.example.Phy6_Master.model.StudentAnswer;
 import com.example.Phy6_Master.model.User;
 import com.example.Phy6_Master.repository.EnrollmentRepository;
 import com.example.Phy6_Master.repository.QuizRepository;
+import com.example.Phy6_Master.repository.QuizResultRepository;
 import com.example.Phy6_Master.repository.QuizSessionRepository;
 import com.example.Phy6_Master.repository.StudentAnswerRepository;
 import com.example.Phy6_Master.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDateTime;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @Service
 public class QuizSessionService {
@@ -49,6 +54,15 @@ public class QuizSessionService {
 
     @Autowired
     private EnrollmentRepository enrollmentRepository;
+
+    @Autowired
+    private QuizResultRepository quizResultRepository;
+
+    @Autowired
+    private QuizScoringService quizScoringService;
+
+    @Value("${quiz.pass-threshold-percentage:50}")
+    private int passThresholdPercentage;
 
     @Transactional
     public QuizSessionResponseDto startSession(StartQuizSessionRequestDto request) {
@@ -179,7 +193,7 @@ public class QuizSessionService {
     }
 
     @Transactional
-    public QuizSessionResponseDto submitSession(Long sessionId, Long studentId) {
+    public QuizResultResponseDto submitSession(Long sessionId, Long studentId) {
         QuizSession session = loadOwnedSession(sessionId, studentId);
         ensureActive(session);
 
@@ -192,21 +206,36 @@ public class QuizSessionService {
             throw new BadRequestException("Please answer all questions before submitting");
         }
 
-        int score = 0;
-        for (Question question : questions) {
-            StudentAnswer answer = answerByQuestion.get(question.getId());
-            if (answer != null && answer.getSelectedOption() != null && answer.getSelectedOption().isCorrect()) {
-                score++;
-            }
-        }
+        int threshold = Math.max(0, Math.min(100, passThresholdPercentage));
+        QuizScoringService.ScoreResult scoreResult = quizScoringService.score(questions, answerByQuestion, threshold);
 
-        session.setScore(score);
+        session.setScore(scoreResult.correctAnswersCount());
         session.setStatus(QuizSessionStatus.COMPLETED);
         session.setCompletedAt(LocalDateTime.now());
         session.setCurrentQuestionIndex(questions.size() - 1);
 
-        QuizSession saved = quizSessionRepository.save(session);
-        return toResponse(saved);
+        QuizSession savedSession = quizSessionRepository.save(session);
+
+        QuizResult quizResult = quizResultRepository.findBySession_Id(savedSession.getId()).orElseGet(QuizResult::new);
+        quizResult.setSession(savedSession);
+        quizResult.setStudent(savedSession.getStudent());
+        quizResult.setQuiz(savedSession.getQuiz());
+        quizResult.setCorrectAnswersCount(scoreResult.correctAnswersCount());
+        quizResult.setTotalQuestions(scoreResult.totalQuestions());
+        quizResult.setScorePercentage(scoreResult.scorePercentage());
+        quizResult.setStatus(scoreResult.status());
+        quizResult.setEvaluatedAt(LocalDateTime.now());
+
+        QuizResult savedResult = quizResultRepository.save(quizResult);
+        return toResultResponse(savedResult);
+    }
+
+    @Transactional(readOnly = true)
+    public QuizResultResponseDto getResult(Long sessionId, Long studentId) {
+        QuizSession session = loadOwnedSession(sessionId, studentId);
+        QuizResult result = quizResultRepository.findBySession_Id(session.getId())
+                .orElseThrow(() -> new NotFoundException("Quiz result not found for session id: " + sessionId));
+        return toResultResponse(result);
     }
 
     private Quiz loadQuiz(Long quizId) {
@@ -282,6 +311,20 @@ public class QuizSessionService {
         response.setTotalQuestions(session.getTotalQuestions());
         response.setScore(session.getScore());
         response.setCompletedAt(session.getCompletedAt());
+        return response;
+    }
+
+    private QuizResultResponseDto toResultResponse(QuizResult result) {
+        QuizResultResponseDto response = new QuizResultResponseDto();
+        response.setId(result.getId());
+        response.setSessionId(result.getSession().getId());
+        response.setStudentId(result.getStudent().getId());
+        response.setQuizId(result.getQuiz().getId());
+        response.setCorrectAnswersCount(result.getCorrectAnswersCount());
+        response.setTotalQuestions(result.getTotalQuestions());
+        response.setScorePercentage(result.getScorePercentage());
+        response.setStatus(result.getStatus());
+        response.setEvaluatedAt(result.getEvaluatedAt());
         return response;
     }
 }

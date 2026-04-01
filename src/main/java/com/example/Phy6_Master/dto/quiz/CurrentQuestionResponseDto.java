@@ -4,7 +4,7 @@ public class CurrentQuestionResponseDto {
     private Long sessionId;
     private Integer questionIndex;
     private Integer totalQuestions;
-    private boolean lastQuestion;
+    private boolean isLastQuestion;
     private QuestionForPlayResponseDto question;
 
     public Long getSessionId() {
@@ -32,11 +32,11 @@ public class CurrentQuestionResponseDto {
     }
 
     public boolean isLastQuestion() {
-        return lastQuestion;
+        return isLastQuestion;
     }
 
     public void setLastQuestion(boolean lastQuestion) {
-        this.lastQuestion = lastQuestion;
+        isLastQuestion = lastQuestion;
     }
 
     public QuestionForPlayResponseDto getQuestion() {
