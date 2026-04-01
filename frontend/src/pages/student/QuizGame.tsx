@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { CheckCircle2, Circle, Flag, PlayCircle, Trophy } from "lucide-react";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -11,6 +12,7 @@ import {
   useAnswerCurrentQuizQuestion,
   useCurrentQuizQuestion,
   useMoveToNextQuizQuestion,
+  useQuizSessionResult,
   useQuizSession,
   useStartQuizSession,
   useStudentCourses,
@@ -34,6 +36,10 @@ export default function QuizGame() {
   const { data: activeSession, error: activeSessionError } = useActiveQuizSession(studentId, quizId);
   const { data: sessionInfo } = useQuizSession(sessionId, studentId);
   const { data: currentQuestion, isLoading: loadingQuestion, error: currentQuestionError } = useCurrentQuizQuestion(sessionId, studentId);
+  const { data: sessionResult } = useQuizSessionResult(
+    sessionInfo?.status === "COMPLETED" ? sessionId : undefined,
+    studentId
+  );
 
   const startSession = useStartQuizSession();
   const answerQuestion = useAnswerCurrentQuizQuestion();
@@ -132,7 +138,9 @@ export default function QuizGame() {
       { sessionId, studentId },
       {
         onSuccess: (res) => {
-          toast.success(`Quiz submitted. Score: ${res.score}/${res.totalQuestions}`);
+          toast.success(
+            `Quiz submitted. Score: ${res.correctAnswersCount}/${res.totalQuestions} (${Math.round(res.scorePercentage)}%)`
+          );
         },
         onError: (err: any) => toast.error(err?.message || "Could not submit quiz."),
       }
@@ -210,9 +218,25 @@ export default function QuizGame() {
               <div className="flex items-center gap-3 mb-3">
                 <Trophy className="h-5 w-5 text-primary" />
                 <p className="font-medium text-foreground">Session completed</p>
+                {sessionResult && (
+                  <Badge
+                    variant={sessionResult.status === "PASS" ? "default" : "destructive"}
+                    className="ml-auto"
+                  >
+                    {sessionResult.status}
+                  </Badge>
+                )}
               </div>
               <p className="text-sm text-muted-foreground">
-                Final Score: <span className="font-semibold text-foreground">{sessionInfo.score}/{sessionInfo.totalQuestions}</span>
+                You scored{" "}
+                <span className="font-semibold text-foreground">
+                  {sessionResult?.correctAnswersCount ?? sessionInfo.score}/{sessionResult?.totalQuestions ?? sessionInfo.totalQuestions}
+                </span>
+                {sessionResult && (
+                  <>
+                    {" "}({Math.round(sessionResult.scorePercentage)}%)
+                  </>
+                )}
               </p>
             </CardContent>
           </Card>
