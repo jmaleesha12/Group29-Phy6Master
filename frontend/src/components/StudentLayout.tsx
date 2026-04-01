@@ -3,7 +3,7 @@ import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard, Calendar, BookOpen, User,
-  GraduationCap, LogOut, ChevronDown
+  GraduationCap, LogOut, ChevronDown, Bell
 } from "lucide-react";
 import NotificationBell from "./NotificationBell";
 
@@ -11,6 +11,7 @@ const sidebarLinks = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/student/dashboard" },
   { label: "Classes", icon: BookOpen, path: "/student/classes" },
   { label: "Schedule", icon: Calendar, path: "/student/schedule" },
+  { label: "Notifications", icon: Bell, path: "/student/notifications" },
   { label: "Profile", icon: User, path: "/student/settings" },
 ];
 

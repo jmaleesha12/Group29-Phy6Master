@@ -6,6 +6,7 @@ import com.example.Phy6_Master.repository.CourseRepository;
 import com.example.Phy6_Master.repository.LessonRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -28,7 +29,7 @@ public class LessonService {
     }
 
     public List<Lesson> getLessonsByCourseId(Long courseId) {
-        return lessonRepository.findByCourseId(courseId);
+        return lessonRepository.findByCourse_IdOrderByMonthAsc(courseId);
     }
 
     public Optional<Lesson> getLessonById(Long id) {
@@ -41,10 +42,12 @@ public class LessonService {
 
         lesson.setTitle(lessonDetails.getTitle());
         lesson.setContent(lessonDetails.getContent());
+        lesson.setMonth(lessonDetails.getMonth());
 
         return lessonRepository.save(lesson);
     }
 
+    @Transactional
     public void deleteLesson(Long id) {
         Lesson lesson = lessonRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Lesson not found with id: " + id));

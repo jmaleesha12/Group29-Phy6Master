@@ -4,14 +4,39 @@ import { Search, Download, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
 import { useStudentCourses, useMaterials, getMaterialDownloadUrl } from "@/lib/api";
+import { get } from "@/lib/api-client";
 
 export default function Resources() {
   const userId = Number(localStorage.getItem("authUserId")) || undefined;
   const { data: courses = [], isLoading: loadingCourses } = useStudentCourses(userId);
   const [selectedCourseId, setSelectedCourseId] = useState<number | undefined>();
-  const { data: materials = [], isLoading: loadingMaterials } = useMaterials(selectedCourseId);
+  const { data: materials = [], isLoading: loadingMaterials } = useMaterials(selectedCourseId, userId);
   const [search, setSearch] = useState("");
+
+  const handleSelectCourse = async (value: string) => {
+    const courseId = Number(value);
+    if (!userId || !courseId) {
+      setSelectedCourseId(courseId || undefined);
+      return;
+    }
+
+    try {
+      const access = await get<{ canAccess: boolean; status: string; message: string }>(
+        `/api/student/enrollments/access/${userId}/${courseId}`
+      );
+      if (!access.canAccess) {
+        toast.error(access.message);
+        setSelectedCourseId(undefined);
+        return;
+      }
+      setSelectedCourseId(courseId);
+    } catch {
+      toast.error("Unable to verify class access at the moment.");
+      setSelectedCourseId(undefined);
+    }
+  };
 
   const filtered = materials.filter((r) =>
     r.title.toLowerCase().includes(search.toLowerCase()),
@@ -26,7 +51,7 @@ export default function Resources() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search resources..." className="pl-10 bg-secondary border-border" />
         </div>
-        <Select value={selectedCourseId ? String(selectedCourseId) : ""} onValueChange={(v) => setSelectedCourseId(Number(v))}>
+        <Select value={selectedCourseId ? String(selectedCourseId) : ""} onValueChange={handleSelectCourse}>
           <SelectTrigger className="w-64 bg-secondary border-border"><SelectValue placeholder="Select a course" /></SelectTrigger>
           <SelectContent>
             {courses.map((c) => <SelectItem key={c.id} value={String(c.id)}>{c.title}</SelectItem>)}

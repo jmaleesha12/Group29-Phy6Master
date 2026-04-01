@@ -30,6 +30,10 @@ public class Enrollment {
 
     private String status = "PENDING"; // PENDING, APPROVED, REJECTED
 
+    @OneToMany(mappedBy = "enrollment", cascade = CascadeType.ALL, orphanRemoval = true)
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private java.util.List<Payment> payments;
+
     @PrePersist
     protected void onCreate() {
         enrollmentDate = LocalDateTime.now();

@@ -5,6 +5,7 @@ import com.example.Phy6_Master.dto.PaymentResponseDTO;
 import com.example.Phy6_Master.model.Payment;
 import com.example.Phy6_Master.service.PaymentService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -33,6 +34,11 @@ public class PaymentController {
         } catch (IllegalStateException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(new PaymentResponseDTO(false, e.getMessage(), null, null));
+        } catch (DataIntegrityViolationException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(new PaymentResponseDTO(false,
+                            "A payment request already exists for this class. Please wait for verification.", null,
+                            null));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(new PaymentResponseDTO(false, e.getMessage(), null, null));
         } catch (Exception e) {
@@ -73,6 +79,11 @@ public class PaymentController {
         } catch (IllegalStateException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(new PaymentResponseDTO(false, e.getMessage(), null, null));
+        } catch (DataIntegrityViolationException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(new PaymentResponseDTO(false,
+                            "A payment request already exists for this class. Please wait for verification.", null,
+                            null));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(new PaymentResponseDTO(false, e.getMessage(), null, null));
         } catch (IOException e) {
@@ -92,5 +103,10 @@ public class PaymentController {
 
         String message = paymentService.processOnlineCheckout(studentId, classId, amount);
         return ResponseEntity.ok(new PaymentResponseDTO(true, message, null, null));
+    }
+
+    @GetMapping("/history/{studentId}")
+    public ResponseEntity<java.util.List<com.example.Phy6_Master.dto.PaymentHistoryResponseDTO>> getPaymentHistory(@PathVariable Long studentId) {
+        return ResponseEntity.ok(paymentService.getPaymentHistory(studentId));
     }
 }

@@ -1,4 +1,4 @@
-export type UserRole = "STUDENT" | "TEACHER" | "ADMIN";
+export type UserRole = "STUDENT" | "TEACHER" | "ADMIN" | "ACCOUNTANT" | "TUTOR";
 
 export type AuthResponse = {
   userId: number;

@@ -13,6 +13,8 @@ import {
   Calendar,
   CreditCard,
   Play,
+  Lock,
+  Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,32 +26,17 @@ import {
 import {
   useCourses,
   useEnrollStudent,
-  useStudentCourses,
+  useUnenrollStudent,
   useLessons,
   useMaterials,
   getMaterialDownloadUrl,
   useTimetableForCourse,
 } from "@/lib/api";
+import { useAllEnrollments } from "@/lib/api/students";
+import type { EnrollmentSummary } from "@/lib/api/students";
 import type { Course, Lesson } from "@/lib/api";
 
 const userId = () => Number(localStorage.getItem("authUserId")) || 0;
-
-/* ──── payment persistence (localStorage) ──── */
-function paidKey(courseId: number): string {
-  return `phy6_paid_${userId()}_${courseId}`;
-}
-function getPaidMonths(courseId: number): Set<string> {
-  try {
-    const raw = localStorage.getItem(paidKey(courseId));
-    return raw ? new Set(JSON.parse(raw)) : new Set();
-  } catch { return new Set(); }
-}
-function markMonthPaid(courseId: number, monthKey: string): Set<string> {
-  const s = getPaidMonths(courseId);
-  s.add(monthKey);
-  localStorage.setItem(paidKey(courseId), JSON.stringify([...s]));
-  return new Set(s);
-}
 
 /* ──── helpers ──── */
 function formatMonth(m: string): string {
@@ -75,9 +62,28 @@ function groupByMonth(lessons: Lesson[]): Record<string, Lesson[]> {
    ENROLLED course card – wide, months always visible
    ═══════════════════════════════════════════════════════════ */
 function EnrolledCourseCard({ course }: { course: Course }) {
+  const uid = userId();
+  const navigate = useNavigate();
+  const unenrollMut = useUnenrollStudent();
+  const { data: allEnrollments = [] } = useAllEnrollments(uid || undefined);
+  const myEnrollment = allEnrollments.find((e: EnrollmentSummary) => e.courseId === course.id);
+  const isPending = myEnrollment?.status === "PENDING";
+  const isSubmitted = myEnrollment?.status === "PAYMENT_SUBMITTED";
+  const isRejected = myEnrollment?.status === "REJECTED";
+
+  const handleDrop = () => {
+    if (confirm("Are you sure you want to drop this class? You will lose access to all lessons and materials.")) {
+      unenrollMut.mutate({ userId: uid, courseId: course.id }, {
+        onSuccess: () => toast.success("Class dropped successfully"),
+        onError: () => toast.error("Failed to drop class")
+      });
+    }
+  };
+
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-      className="rounded-xl border border-border bg-card shadow-card overflow-hidden">
+      className={`rounded-xl border bg-card shadow-card overflow-hidden ${isPending ? 'border-yellow-500/50 relative' : isSubmitted ? 'border-blue-500/50 relative' : isRejected ? 'border-red-500/50 relative' : 'border-border'}`}>
+      
       {/* Top bar: image + info */}
       <div className="flex items-center gap-4 p-5 border-b border-border">
         <div className="h-14 w-14 rounded-lg bg-accent flex items-center justify-center shrink-0 overflow-hidden">
@@ -88,17 +94,58 @@ function EnrolledCourseCard({ course }: { course: Course }) {
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <h3 className="font-display text-lg font-semibold text-foreground truncate">{course.title}</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="font-display text-lg font-semibold text-foreground truncate">{course.title}</h3>
+            {isPending && <span className="bg-yellow-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-sm uppercase tracking-wider">Pending Payment</span>}
+            {isSubmitted && <span className="bg-blue-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-sm uppercase tracking-wider">Verifying Payment</span>}
+            {isRejected && <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-sm uppercase tracking-wider">Payment Rejected</span>}
+          </div>
           <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
             {course.subject && <span>{course.subject}</span>}
             {course.batch && <span className="px-2 py-0.5 rounded bg-accent text-accent-foreground">{course.batch}</span>}
             {course.teacher && <span>· {course.teacher.name}</span>}
           </div>
         </div>
+        <div className="ml-auto flex items-center shrink-0">
+          <Button variant="ghost" size="sm" className="text-destructive/80 hover:bg-destructive/10 hover:text-destructive text-xs h-8 px-2.5" onClick={handleDrop}>
+            Drop Class
+          </Button>
+        </div>
       </div>
 
-      {/* Months (always visible) */}
-      <MonthLessonsPanel courseId={course.id} />
+      {isPending ? (
+        <div className="p-8 flex flex-col items-center justify-center text-center bg-yellow-500/5">
+           <Lock className="h-10 w-10 text-yellow-500 mb-3 opacity-80" />
+           <h4 className="font-semibold text-foreground mb-1">Finish Your Enrollment</h4>
+           <p className="text-sm text-muted-foreground max-w-sm mb-5">
+             You have been enrolled in {course.title}, but your status is pending. Please complete the admission or course fee payment to unlock access to lessons and resources.
+           </p>
+           <Button className="gradient-cta text-primary-foreground gap-2" onClick={() => navigate(`/student/classes/${course.id}/payment`)}>
+             <CreditCard className="h-4 w-4" /> Complete Payment
+           </Button>
+        </div>
+      ) : isSubmitted ? (
+        <div className="p-8 flex flex-col items-center justify-center text-center bg-blue-500/5">
+           <Clock className="h-10 w-10 text-blue-500 mb-3 opacity-80" />
+           <h4 className="font-semibold text-foreground mb-1">Payment Verification in Progress</h4>
+           <p className="text-sm text-muted-foreground max-w-sm mb-5">
+             You have submitted a payment for {course.title}. Please wait while our accountants verify it. You will be notified once approved.
+           </p>
+        </div>
+      ) : isRejected ? (
+        <div className="p-8 flex flex-col items-center justify-center text-center bg-red-500/5">
+           <Lock className="h-10 w-10 text-red-500 mb-3 opacity-80" />
+           <h4 className="font-semibold text-foreground mb-1">Payment Rejected</h4>
+           <p className="text-sm text-muted-foreground max-w-sm mb-5">
+             Your submitted payment for {course.title} was rejected by the accountant. Please check your bank receipt and try submitting your payment again.
+           </p>
+           <Button className="gradient-cta text-primary-foreground gap-2" onClick={() => navigate(`/student/classes/${course.id}/payment`)}>
+             <CreditCard className="h-4 w-4" /> Complete Payment
+           </Button>
+        </div>
+      ) : (
+        <MonthLessonsPanel courseId={course.id} />
+      )}
     </motion.div>
   );
 }
@@ -123,8 +170,8 @@ function AvailableCourseCard({ course, alreadyEnrolled = false }: { course: Cour
           toast.success(`Enrolled in ${course.title}!`);
           setJustEnrolled(true);
         },
-        onError: (err: any) => {
-          const msg = err?.message || "";
+        onError: (err: unknown) => {
+          const msg = err instanceof Error ? err.message : "";
           if (msg.toLowerCase().includes("already enrolled")) {
             toast.info(`Already enrolled in ${course.title}`);
             setJustEnrolled(true);
@@ -179,11 +226,11 @@ function AvailableCourseCard({ course, alreadyEnrolled = false }: { course: Cour
    Month-wise lessons panel (inside enrolled card)
    ══════════════════════════════════════════ */
 function MonthLessonsPanel({ courseId }: { courseId: number }) {
+  const uid = userId();
   const navigate = useNavigate();
   const { data: lessons = [], isLoading } = useLessons(courseId);
-  const { data: timetableSlots = [] } = useTimetableForCourse(courseId);
+  const { data: timetableSlots = [] } = useTimetableForCourse(courseId, uid || undefined);
   const [openMonth, setOpenMonth] = useState<string | null>(null);
-  const [paidMonths, setPaidMonths] = useState<Set<string>>(() => getPaidMonths(courseId));
   const [showMonthResources, setShowMonthResources] = useState<{ monthKey: string; monthLabel: string; lessonIds: number[] } | null>(null);
 
   // Find the first meeting link from this course's timetable slots
@@ -194,15 +241,9 @@ function MonthLessonsPanel({ courseId }: { courseId: number }) {
 
   const grouped = groupByMonth(lessons);
 
-  const handleMakePayment = (monthKey: string) => {
-    setPaidMonths(markMonthPaid(courseId, monthKey));
-  };
-
   return (
     <div className="bg-secondary/30">
-      {Object.entries(grouped).map(([monthKey, monthLessons]) => {
-        const isPaid = paidMonths.has(monthKey);
-        return (
+      {Object.entries(grouped).map(([monthKey, monthLessons]) => (
           <div key={monthKey} className="border-b border-border last:border-b-0">
             {/* Month header */}
             <div className="flex items-center gap-2 px-4 py-3 hover:bg-accent/30 transition-colors">
@@ -213,41 +254,30 @@ function MonthLessonsPanel({ courseId }: { courseId: number }) {
                 <span className="text-sm font-semibold text-foreground">{formatMonth(monthKey)}</span>
                 <span className="ml-auto text-xs text-muted-foreground mr-2">{monthLessons.length} lesson{monthLessons.length !== 1 ? "s" : ""}</span>
               </button>
-              {isPaid ? (
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <Button size="sm" variant="outline" className="text-xs gap-1.5"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowMonthResources({
-                        monthKey,
-                        monthLabel: formatMonth(monthKey),
-                        lessonIds: monthLessons.map((l) => l.id),
-                      });
-                    }}>
-                    <FileText className="h-3.5 w-3.5" /> Resources
-                  </Button>
-                  <Button size="sm" className="text-xs gap-1.5 gradient-cta text-primary-foreground"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (meetingLink) {
-                        window.open(meetingLink, "_blank");
-                      } else {
-                        toast.info("No meeting link set for this class yet.");
-                      }
-                    }}>
-                    <Play className="h-3.5 w-3.5" /> Join Now
-                  </Button>
-                </div>
-              ) : (
-                <Button size="sm" variant="outline"
-                  className="shrink-0 text-xs gap-1.5 border-primary/30 text-primary hover:bg-primary hover:text-primary-foreground"
+              <div className="flex items-center gap-1.5 shrink-0">
+                <Button size="sm" variant="outline" className="text-xs gap-1.5"
                   onClick={(e) => {
                     e.stopPropagation();
-                    navigate(`/student/classes/${courseId}/payment`);
+                    setShowMonthResources({
+                      monthKey,
+                      monthLabel: formatMonth(monthKey),
+                      lessonIds: monthLessons.map((l) => l.id),
+                    });
                   }}>
-                  <CreditCard className="h-3.5 w-3.5" /> Make Payment
+                  <FileText className="h-3.5 w-3.5" /> Resources
                 </Button>
-              )}
+                <Button size="sm" className="text-xs gap-1.5 gradient-cta text-primary-foreground"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (meetingLink) {
+                      window.open(meetingLink, "_blank");
+                    } else {
+                      toast.info("No meeting link set for this class yet.");
+                    }
+                  }}>
+                  <Play className="h-3.5 w-3.5" /> Join Now
+                </Button>
+              </div>
             </div>
             {/* Lesson list */}
             <AnimatePresence>
@@ -269,8 +299,7 @@ function MonthLessonsPanel({ courseId }: { courseId: number }) {
               )}
             </AnimatePresence>
           </div>
-        );
-      })}
+      ))}
 
       {/* Month resources dialog */}
       {showMonthResources && (
@@ -294,7 +323,8 @@ function MonthResourcesDialog({ open, onClose, courseId, monthLabel, lessonIds, 
   open: boolean; onClose: () => void; courseId: number; monthLabel: string;
   lessonIds: number[]; lessons: Lesson[];
 }) {
-  const { data: allMaterials = [], isLoading } = useMaterials(open ? courseId : undefined);
+  const uid = userId();
+  const { data: allMaterials = [], isLoading } = useMaterials(open ? courseId : undefined, uid || undefined);
   const idSet = new Set(lessonIds);
   const materials = allMaterials.filter((m) => m.lesson?.id && idSet.has(m.lesson.id));
 
@@ -361,11 +391,30 @@ function MonthResourcesDialog({ open, onClose, courseId, monthLabel, lessonIds, 
 export default function StudentClasses() {
   const uid = userId();
   const { data: allCourses = [], isLoading: loadingAll } = useCourses();
-  const { data: enrolledCourses = [], isLoading: loadingEnrolled } = useStudentCourses(uid || undefined);
+  const { data: allEnrollments = [], isLoading: loadingEnrollments } = useAllEnrollments(uid || undefined);
 
-  const enrolledIds = useMemo(() => new Set(enrolledCourses.map((c) => c.id)), [enrolledCourses]);
+  const myClasses = useMemo(() => {
+    const courseById = new Map(allCourses.map((course) => [course.id, course]));
+    const uniqueByCourseId = new Map<number, Course>();
 
-  const loading = loadingAll || loadingEnrolled;
+    for (const enrollment of allEnrollments) {
+      if (!uniqueByCourseId.has(enrollment.courseId)) {
+        uniqueByCourseId.set(
+          enrollment.courseId,
+          courseById.get(enrollment.courseId) ?? {
+            id: enrollment.courseId,
+            title: enrollment.courseName,
+          }
+        );
+      }
+    }
+
+    return Array.from(uniqueByCourseId.values());
+  }, [allCourses, allEnrollments]);
+
+  const enrolledIds = useMemo(() => new Set(allEnrollments.map((e) => e.courseId)), [allEnrollments]);
+
+  const loading = loadingAll || loadingEnrollments;
 
   return (
     <div className="space-y-10">
@@ -378,7 +427,7 @@ export default function StudentClasses() {
 
         {loading ? (
           <p className="mt-4 text-sm text-muted-foreground">Loading...</p>
-        ) : enrolledCourses.length === 0 ? (
+        ) : myClasses.length === 0 ? (
           <div className="mt-4 rounded-xl border border-dashed border-border bg-card/50 p-8 text-center">
             <GraduationCap className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
             <p className="text-muted-foreground text-sm">You haven't enrolled in any classes yet.</p>
@@ -386,7 +435,7 @@ export default function StudentClasses() {
           </div>
         ) : (
           <div className="mt-4 space-y-5">
-            {enrolledCourses.map((c) => <EnrolledCourseCard key={c.id} course={c} />)}
+            {myClasses.map((c) => <EnrolledCourseCard key={c.id} course={c} />)}
           </div>
         )}
       </section>

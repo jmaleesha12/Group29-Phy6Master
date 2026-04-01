@@ -41,9 +41,10 @@ export default function TeacherAnnouncementsPage() {
       setIsDialogOpen(false);
       toast.success("Announcement created successfully!");
       refetch();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to create announcement:", error);
-      toast.error(error?.message || "Failed to create announcement");
+      const message = error instanceof Error ? error.message : "Failed to create announcement";
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -58,9 +59,10 @@ export default function TeacherAnnouncementsPage() {
         });
         toast.success("Announcement deleted");
         refetch();
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error("Failed to delete announcement:", error);
-        toast.error(error?.message || "Failed to delete announcement");
+        const message = error instanceof Error ? error.message : "Failed to delete announcement";
+        toast.error(message);
       }
     }
   };

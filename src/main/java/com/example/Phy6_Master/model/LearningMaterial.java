@@ -23,7 +23,7 @@ public class LearningMaterial {
 
     private String url; // Could be a file path or external link
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "lesson_id", nullable = false)
     private Lesson lesson;
 

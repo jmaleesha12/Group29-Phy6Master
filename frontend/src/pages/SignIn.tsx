@@ -39,6 +39,11 @@ export default function SignIn() {
         return;
       }
 
+      if (response.role === "ACCOUNTANT") {
+        navigate("/accountant/payments");
+        return;
+      }
+
       navigate("/student/dashboard");
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unable to sign in";

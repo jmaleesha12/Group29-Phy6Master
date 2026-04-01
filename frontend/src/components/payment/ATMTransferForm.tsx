@@ -16,6 +16,19 @@ const ATMTransferForm: React.FC<ATMTransferFormProps> = ({ onSubmit, isLoading, 
 
     return (
         <form onSubmit={handleSubmit} className="space-y-4 animate-fade-in">
+            <div className="p-4 bg-blue-50 text-blue-800 rounded-lg text-sm mb-2 shadow-sm border border-blue-100">
+                <p className="font-semibold text-blue-900 mb-2">Our Bank Account Details</p>
+                <div className="grid grid-cols-2 gap-y-1">
+                    <p className="text-blue-700">Bank:</p>
+                    <p className="font-medium">Commercial Bank</p>
+                    <p className="text-blue-700">Branch:</p>
+                    <p className="font-medium">Colombo 03</p>
+                    <p className="text-blue-700">Account Name:</p>
+                    <p className="font-medium">Phy6 Master Institute</p>
+                    <p className="text-blue-700">Account No:</p>
+                    <p className="font-medium text-lg">1122 3344 5566</p>
+                </div>
+            </div>
             <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                     Amount (LKR)

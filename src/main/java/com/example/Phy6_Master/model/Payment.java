@@ -16,7 +16,7 @@ public class Payment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "enrollment_id", nullable = false)
     private Enrollment enrollment;
 
@@ -31,6 +31,19 @@ public class Payment {
     private String referenceNumber; // For ATM transfers
 
     private LocalDateTime paymentDate;
+
+    @Column(length = 1000)
+    private String rejectionReason;
+
+    private LocalDateTime verifiedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "verified_by_id")
+    private User verifiedBy;
+
+    @OneToMany(mappedBy = "payment", cascade = CascadeType.ALL, orphanRemoval = true)
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private java.util.List<Notification> notifications;
 
     @PrePersist
     protected void onCreate() {

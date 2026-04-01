@@ -23,6 +23,10 @@ import Announcements from "./pages/teacher/Announcements";
 import TeacherLayout from "./components/TeacherLayout";
 import NotFound from "./pages/NotFound";
 import PaymentPage from "./pages/student/PaymentPage";
+import NotificationsPage from "./pages/student/NotificationsPage";
+import AccountantLayout from "./components/AccountantLayout";
+import PendingPaymentsList from "./pages/accountant/PendingPaymentsList";
+import PaymentVerificationDetail from "./pages/accountant/PaymentVerificationDetail";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -64,8 +68,14 @@ const App = () => {
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="classes" element={<StudentClasses />} />
               <Route path="classes/:classId/payment" element={<PaymentPage />} />
+              <Route path="notifications" element={<NotificationsPage />} />
               <Route path="schedule" element={<Schedule />} />
               <Route path="settings" element={<SettingsPage />} />
+            </Route>
+            <Route path="/accountant" element={<AccountantLayout />}>
+              <Route index element={<Navigate to="payments" replace />} />
+              <Route path="payments" element={<PendingPaymentsList />} />
+              <Route path="payments/:paymentId" element={<PaymentVerificationDetail />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

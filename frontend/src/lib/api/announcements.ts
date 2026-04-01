@@ -46,10 +46,9 @@ export function useCreateAnnouncement() {
     }) => {
       return post<Announcement>("/api/announcements", data);
     },
-    onSuccess: (data: { courseId: any; teacherId: any; }) => {
-   
-      queryClient.invalidateQueries({ queryKey: ["announcements-by-course", data.courseId] });
-      queryClient.invalidateQueries({ queryKey: ["announcements-by-teacher", data.teacherId] });
+    onSuccess: (createdAnnouncement: Announcement) => {
+      queryClient.invalidateQueries({ queryKey: ["announcements-by-course", createdAnnouncement.courseId] });
+      queryClient.invalidateQueries({ queryKey: ["announcements-by-teacher", createdAnnouncement.teacherId] });
       queryClient.invalidateQueries({ queryKey: ["announcements-for-student"] });
     },
   });
@@ -71,11 +70,10 @@ export function useUpdateAnnouncement() {
         content: data.content,
       });
     },
-    onSuccess: (data: { id: any; courseId: any; teacherId: any; }) => {
-     
-      queryClient.invalidateQueries({ queryKey: ["announcement", data.id] });
-      queryClient.invalidateQueries({ queryKey: ["announcements-by-course", data.courseId] });
-      queryClient.invalidateQueries({ queryKey: ["announcements-by-teacher", data.teacherId] });
+    onSuccess: (updatedAnnouncement: Announcement) => {
+      queryClient.invalidateQueries({ queryKey: ["announcement", updatedAnnouncement.id] });
+      queryClient.invalidateQueries({ queryKey: ["announcements-by-course", updatedAnnouncement.courseId] });
+      queryClient.invalidateQueries({ queryKey: ["announcements-by-teacher", updatedAnnouncement.teacherId] });
       queryClient.invalidateQueries({ queryKey: ["announcements-for-student"] });
     },
   });

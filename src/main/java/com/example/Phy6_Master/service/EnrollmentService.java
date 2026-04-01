@@ -34,12 +34,13 @@ public class EnrollmentService {
         Course course = courseRepository.findById(courseId)
                 .orElseThrow(() -> new IllegalArgumentException("Course not found"));
 
-        if (enrollmentRepository.existsByStudentAndCourseAndStatus(user, course, "PENDING")) {
-            throw new IllegalStateException("A pending enrollment already exists for this class");
-        }
-
-        if (enrollmentRepository.existsByStudentAndCourseAndStatus(user, course, "APPROVED")) {
-            throw new IllegalStateException("Student is already enrolled in this class");
+        java.util.Optional<Enrollment> existingOpt = enrollmentRepository.findByStudentAndCourse(user, course);
+        if (existingOpt.isPresent()) {
+            Enrollment existing = existingOpt.get();
+            if ("APPROVED".equalsIgnoreCase(existing.getStatus())) {
+                throw new IllegalStateException("Student is already enrolled in this class");
+            }
+            return existing;
         }
 
         Enrollment enrollment = new Enrollment();

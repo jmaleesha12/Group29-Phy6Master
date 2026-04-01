@@ -55,6 +55,16 @@ export async function put<T>(path: string, body?: unknown): Promise<T> {
   return handleResponse<T>(res);
 }
 
+export async function patch<T>(path: string, body?: unknown): Promise<T> {
+  const res = await fetch(`${BASE_URL}${path}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: body ? JSON.stringify(body) : undefined,
+    cache: "no-store",
+  });
+  return handleResponse<T>(res);
+}
+
 export async function del<T = void>(path: string): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`, { method: "DELETE", cache: "no-store" });
   return handleResponse<T>(res);

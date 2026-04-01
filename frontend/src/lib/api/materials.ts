@@ -2,10 +2,10 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { get, del, uploadFile, downloadUrl } from "@/lib/api-client";
 import type { LearningMaterial } from "./types";
 
-export function useMaterials(courseId: number | undefined) {
+export function useMaterials(courseId: number | undefined, userId?: number) {
   return useQuery<LearningMaterial[]>({
-    queryKey: ["materials", courseId],
-    queryFn: () => get<LearningMaterial[]>(`/api/courses/${courseId}/materials`),
+    queryKey: ["materials", courseId, userId],
+    queryFn: () => get<LearningMaterial[]>(`/api/courses/${courseId}/materials${userId ? `?userId=${userId}` : ""}`),
     enabled: !!courseId,
   });
 }

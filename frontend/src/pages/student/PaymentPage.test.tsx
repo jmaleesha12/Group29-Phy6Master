@@ -19,7 +19,7 @@ function renderWithProviders(ui: React.ReactElement) {
 describe('PaymentPage Component', () => {
     it('should render the payment method selector', () => {
         renderWithProviders(<PaymentPage />);
-        expect(screen.getByText(/Submit Payment to Request Enrollment/i)).toBeInTheDocument();
+        expect(screen.getByText(/Class Enrollment Fee/i)).toBeInTheDocument();
         expect(screen.getByText(/ATM Transfer/i)).toBeInTheDocument();
         expect(screen.getByText(/Bank Slip Upload/i)).toBeInTheDocument();
         expect(screen.getByText(/Online Payment/i)).toBeInTheDocument();
@@ -47,6 +47,7 @@ describe('PaymentPage Component', () => {
         fireEvent.click(screen.getByText(/Bank Slip Upload/i));
 
         // Check that upload area is present
-        expect(screen.getByText(/Click to upload/i)).toBeInTheDocument();
+        expect(screen.getByText(/Upload Bank Slip/i)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Upload & Submit/i })).toBeDisabled();
     });
 });

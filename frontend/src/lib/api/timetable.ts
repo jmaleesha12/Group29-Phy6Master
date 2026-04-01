@@ -9,10 +9,10 @@ export function useTimetable() {
   });
 }
 
-export function useTimetableForCourse(courseId: number | undefined) {
+export function useTimetableForCourse(courseId: number | undefined, userId?: number) {
   return useQuery<TimetableSlot[]>({
-    queryKey: ["timetable", "course", courseId],
-    queryFn: () => get<TimetableSlot[]>(`/api/timetable/course/${courseId}`),
+    queryKey: ["timetable", "course", courseId, userId],
+    queryFn: () => get<TimetableSlot[]>(`/api/timetable/course/${courseId}${userId ? `?userId=${userId}` : ""}`),
     enabled: !!courseId,
   });
 }
