@@ -1,6 +1,5 @@
 package com.example.Phy6_Master.controller;
 
-import com.example.Phy6_Master.model.User;
 import com.example.Phy6_Master.repository.UserRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

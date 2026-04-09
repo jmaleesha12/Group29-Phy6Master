@@ -2,6 +2,9 @@ package com.example.Phy6_Master.controller;
 
 import com.example.Phy6_Master.dto.TimetableSlotDTO;
 import com.example.Phy6_Master.model.TimetableSlot;
+import com.example.Phy6_Master.model.User;
+import com.example.Phy6_Master.repository.UserRepository;
+import com.example.Phy6_Master.service.ClassAccessService;
 import com.example.Phy6_Master.service.TimetableService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -9,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * REST Controller for the Teacher's Timetable Scheduling.
@@ -30,6 +34,11 @@ public class TimetableController {
     @Autowired
     private TimetableService timetableService;
 
+    @Autowired
+    private ClassAccessService classAccessService;
+
+    @Autowired
+    private UserRepository userRepository;
     // ── POST /api/timetable ───────────────────────────────────────────────────
 
     /**
@@ -84,8 +93,20 @@ public class TimetableController {
      * Get all timetable slots for a specific course.
      */
     @GetMapping("/course/{courseId}")
-    public ResponseEntity<?> getSlotsByCourse(@PathVariable Long courseId) {
+    public ResponseEntity<?> getSlotsByCourse(@PathVariable Long courseId,
+            @RequestParam(required = false) Long userId) {
         try {
+            if (userId != null) {
+                User user = userRepository.findById(userId).orElse(null);
+                if (user == null) {
+                    return ResponseEntity.badRequest().body(Map.of("message", "User not found"));
+                }
+                var access = classAccessService.checkAccess(user, courseId);
+                if (!access.isCanAccess()) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                            .body(Map.of("message", access.getMessage(), "status", access.getStatus()));
+                }
+            }
             List<TimetableSlot> slots = timetableService.getSlotsByCourse(courseId);
             return ResponseEntity.ok(slots);
         } catch (RuntimeException e) {

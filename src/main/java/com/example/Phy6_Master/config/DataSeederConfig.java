@@ -10,6 +10,9 @@ public class DataSeederConfig {
 
     @Bean
     public CommandLineRunner seedDefaultTeacher(AuthService authService) {
-        return args -> authService.ensureDefaultTeacher();
+        return args -> {
+            authService.ensureDefaultTeacher();
+            authService.ensureDefaultAccountant();
+        };
     }
 }

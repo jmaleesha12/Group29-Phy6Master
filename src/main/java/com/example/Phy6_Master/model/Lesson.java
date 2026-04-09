@@ -3,11 +3,8 @@ package com.example.Phy6_Master.model;
 import jakarta.persistence.*;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-<<<<<<< Updated upstream
-=======
 import java.util.List;
 import java.util.ArrayList;
->>>>>>> Stashed changes
 
 @Entity
 @Table(name = "lessons")
@@ -31,18 +28,11 @@ public class Lesson {
     @JoinColumn(name = "course_id", nullable = false)
     private Course course;
 
-<<<<<<< Updated upstream
-    public Lesson() {}
-
-=======
-    // Cascade delete for learning materials
-    @JsonIgnore
     @OneToMany(mappedBy = "lesson", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<LearningMaterial> materials = new ArrayList<>();
+    @JsonIgnore
+    private List<LearningMaterial> learningMaterials = new ArrayList<>();
 
     public Lesson() {}
-
->>>>>>> Stashed changes
     public Lesson(Long id, String title, String content, Course course, String month) {
         this.id = id;
         this.title = title;
@@ -67,8 +57,6 @@ public class Lesson {
     public void setMonth(String month) { this.month = month; }
     public Course getCourse() { return course; }
     public void setCourse(Course course) { this.course = course; }
-<<<<<<< Updated upstream
-=======
-    public List<LearningMaterial> getMaterials() { return materials; }
->>>>>>> Stashed changes
+    public List<LearningMaterial> getLearningMaterials() { return learningMaterials; }
+    public void setLearningMaterials(List<LearningMaterial> learningMaterials) { this.learningMaterials = learningMaterials; }
 }

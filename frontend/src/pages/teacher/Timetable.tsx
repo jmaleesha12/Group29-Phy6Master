@@ -58,7 +58,10 @@ export default function Timetable() {
     }
     createSlot.mutate(newEntry, {
       onSuccess: () => { setShowAdd(false); toast.success("Class scheduled successfully!"); },
-      onError: (err: any) => toast.error(err?.message || "Failed to schedule class"),
+      onError: (err: unknown) => {
+        const message = err instanceof Error ? err.message : "Failed to schedule class";
+        toast.error(message);
+      },
     });
   };
 
@@ -80,7 +83,10 @@ export default function Timetable() {
     }
     updateSlot.mutate(editEntry, {
       onSuccess: () => { setShowEdit(false); toast.success("Class updated successfully!"); },
-      onError: (err: any) => toast.error(err?.message || "Failed to update class"),
+      onError: (err: unknown) => {
+        const message = err instanceof Error ? err.message : "Failed to update class";
+        toast.error(message);
+      },
     });
   };
 

@@ -6,6 +6,7 @@ import com.example.Phy6_Master.repository.CourseRepository;
 import com.example.Phy6_Master.repository.LessonRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -46,6 +47,7 @@ public class LessonService {
         return lessonRepository.save(lesson);
     }
 
+    @Transactional
     public void deleteLesson(Long id) {
         Lesson lesson = lessonRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Lesson not found with id: " + id));

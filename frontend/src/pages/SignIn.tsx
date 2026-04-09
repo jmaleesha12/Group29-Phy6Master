@@ -39,6 +39,11 @@ export default function SignIn() {
         return;
       }
 
+      if (response.role === "ACCOUNTANT") {
+        navigate("/accountant/payments");
+        return;
+      }
+
       navigate("/student/dashboard");
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unable to sign in";
@@ -97,13 +102,7 @@ export default function SignIn() {
             </Button>
           </form>
         </motion.div>
-
-        <p className="text-center text-sm text-muted-foreground mt-8">Welcome back to Phy6 Master</p>
       </div>
-
-      <footer className="border-t border-border py-6 text-center text-xs text-muted-foreground mt-auto">
-        © 2024 Phy6 Master Inc. All rights reserved. <span className="mx-2">|</span> Help Center <span className="mx-2">|</span> Contact Support
-      </footer>
     </div>
   );
 }

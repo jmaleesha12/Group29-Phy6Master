@@ -46,9 +46,24 @@ export interface Lesson {
   id: number;
   title: string;
   content?: string;
-  courseId: number;
   month?: string;   // "YYYY-MM" e.g. "2026-03"
   courseId?: number; // exposed from backend @JsonProperty
+}
+
+export interface MaterialResponse {
+  id: number;
+  title: string;
+  type: "PDF" | "VIDEO" | "LINK" | "NOTE";
+  url: string;
+  lessonId: number;
+}
+
+export interface LessonWithMaterials {
+  id: number;
+  title: string;
+  content?: string;
+  courseId: number;
+  materials: MaterialResponse[];
 }
 
 export interface LearningMaterial {
@@ -84,4 +99,29 @@ export interface Teacher {
   office?: string;
   officePhoneNumber?: string;
   joiningDate?: string;
+}
+
+export interface Announcement {
+  id: number;
+  title: string;
+  content: string;
+  courseId: number;
+  courseName: string;
+  teacherId: number;
+  teacherName: string;
+  createdAt: string;   // ISO date-time from backend LocalDateTime
+  updatedAt: string;   // ISO date-time from backend LocalDateTime
+}
+
+export interface CreateAnnouncementRequest {
+  courseId: number;
+  teacherId: number;
+  title: string;
+  content: string;
+}
+
+export interface UpdateAnnouncementRequest {
+  teacherId: number;
+  title: string;
+  content: string;
 }

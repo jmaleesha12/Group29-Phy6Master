@@ -1,13 +1,6 @@
-<<<<<<< Updated upstream
-import { useState, useRef } from "react";
-import { motion } from "framer-motion";
-import { Upload, FileText, Trash2, Eye, Plus, Pencil, BookOpen } from "lucide-react";
-// Note: Trash2 and Pencil kept for lesson edit/delete; material edit/delete removed for now
-=======
 import { useState, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Upload, FileText, Trash2, Eye, Plus, Pencil, BookOpen, ChevronDown, ChevronRight, ExternalLink, Download } from "lucide-react";
->>>>>>> Stashed changes
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -16,12 +9,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { toast } from "sonner";
 import {
   useCourses, useLessons, useCreateLesson, useUpdateLesson, useDeleteLesson,
-<<<<<<< Updated upstream
-  useMaterials, useUploadMaterial, getMaterialDownloadUrl,
-  type Lesson,
-} from "@/lib/api";
-
-=======
   useMaterials, useUploadMaterial, useDeleteMaterial, useUpdateMaterial, getMaterialDownloadUrl,
   type Lesson, type LearningMaterial,
 } from "@/lib/api";
@@ -152,18 +139,14 @@ function LessonsWithResources({ lessons, materials, loadingMaterials, onEditLess
   );
 }
 
->>>>>>> Stashed changes
 export default function ContentUpload() {
   const { data: courses = [], isLoading: loadingCourses } = useCourses();
   const [selectedCourseId, setSelectedCourseId] = useState<number | undefined>();
   const { data: lessons = [] } = useLessons(selectedCourseId);
   const { data: materials = [], isLoading: loadingMaterials } = useMaterials(selectedCourseId);
   const uploadMaterial = useUploadMaterial();
-<<<<<<< Updated upstream
-=======
   const deleteMaterial = useDeleteMaterial();
   const updateMaterial = useUpdateMaterial();
->>>>>>> Stashed changes
   const createLesson = useCreateLesson();
   const updateLesson = useUpdateLesson();
   const deleteLesson = useDeleteLesson();
@@ -174,15 +157,8 @@ export default function ContentUpload() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Lesson dialogs.
+  // Lesson dialogs
   const [showAddLesson, setShowAddLesson] = useState(false);
-<<<<<<< Updated upstream
-  const [newLesson, setNewLesson] = useState({ title: "", content: "" });
-  const [showEditLesson, setShowEditLesson] = useState(false);
-  const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
-
-
-=======
   const [newLesson, setNewLesson] = useState({ title: "", content: "", month: "" });
   const [showEditLesson, setShowEditLesson] = useState(false);
   const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
@@ -193,7 +169,6 @@ export default function ContentUpload() {
   const [editFile, setEditFile] = useState<File | null>(null);
   const [editLinkUrl, setEditLinkUrl] = useState("");
   const editFileInputRef = useRef<HTMLInputElement>(null);
->>>>>>> Stashed changes
 
   const handleUpload = () => {
     if (!newRes.title) { toast.error("Please enter a title"); return; }
@@ -219,20 +194,12 @@ export default function ContentUpload() {
 
   const handleAddLesson = () => {
     if (!newLesson.title || !selectedCourseId) { toast.error("Please enter a lesson title"); return; }
-<<<<<<< Updated upstream
-    createLesson.mutate(
-      { courseId: selectedCourseId, title: newLesson.title, content: newLesson.content },
-      {
-        onSuccess: () => {
-          setNewLesson({ title: "", content: "" });
-=======
     if (!newLesson.month) { toast.error("Please select a month"); return; }
     createLesson.mutate(
       { courseId: selectedCourseId, title: newLesson.title, content: newLesson.content, month: newLesson.month },
       {
         onSuccess: () => {
           setNewLesson({ title: "", content: "", month: "" });
->>>>>>> Stashed changes
           setShowAddLesson(false);
           toast.success("Lesson created!");
         },
@@ -244,11 +211,7 @@ export default function ContentUpload() {
   const handleEditLesson = () => {
     if (!editingLesson) return;
     updateLesson.mutate(
-<<<<<<< Updated upstream
-      { id: editingLesson.id, title: editingLesson.title, content: editingLesson.content },
-=======
       { id: editingLesson.id, title: editingLesson.title, content: editingLesson.content, month: editingLesson.month },
->>>>>>> Stashed changes
       {
         onSuccess: () => {
           setEditingLesson(null);
@@ -267,9 +230,6 @@ export default function ContentUpload() {
     });
   };
 
-<<<<<<< Updated upstream
-
-=======
   const handleDeleteMaterial = (id: number) => {
     deleteMaterial.mutate(id, {
       onSuccess: () => toast.success("Material deleted"),
@@ -294,7 +254,6 @@ export default function ContentUpload() {
       },
     );
   };
->>>>>>> Stashed changes
 
   if (loadingCourses) {
     return <div className="p-6 text-muted-foreground">Loading...</div>;
@@ -334,89 +293,6 @@ export default function ContentUpload() {
         </div>
       ) : (
         <>
-<<<<<<< Updated upstream
-          {/* ─── Lessons Section ─── */}
-          <div className="rounded-xl bg-card border border-border shadow-card overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-secondary">
-              <div className="flex items-center gap-2">
-                <BookOpen className="h-4 w-4 text-primary" />
-                <h2 className="text-sm font-semibold text-foreground uppercase tracking-wide">Lessons ({lessons.length})</h2>
-              </div>
-            </div>
-            {lessons.length === 0 ? (
-              <div className="p-8 text-center">
-                <BookOpen className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">No lessons yet. Create your first lesson to start uploading materials.</p>
-              </div>
-            ) : (
-              <div className="divide-y divide-border">
-                {lessons.map((l, i) => (
-                  <motion.div key={l.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.03 }}
-                    className="flex items-center justify-between px-4 py-3 hover:bg-secondary/50 transition-colors">
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">{l.title}</p>
-                      {l.content && <p className="text-xs text-muted-foreground truncate mt-0.5">{l.content}</p>}
-                    </div>
-                    <div className="flex gap-1 shrink-0">
-                      <Button variant="ghost" size="sm" onClick={() => { setEditingLesson({ ...l }); setShowEditLesson(true); }}>
-                        <Pencil className="h-3 w-3" />
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => handleDeleteLesson(l.id)} className="text-destructive">
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* ─── Materials Section ─── */}
-          {loadingMaterials ? (
-            <p className="text-muted-foreground">Loading materials...</p>
-          ) : materials.length === 0 ? (
-            <div className="rounded-xl bg-card border border-border p-10 shadow-card text-center">
-              <Upload className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-              <p className="text-muted-foreground">No materials for this course yet. Upload your first resource.</p>
-            </div>
-          ) : (
-            <div className="rounded-xl bg-card border border-border shadow-card overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-border bg-secondary">
-                      <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">Resource</th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">Type</th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">Lesson</th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {materials.map((r) => (
-                      <tr key={r.id} className="border-b border-border last:border-0 hover:bg-secondary/50 transition-colors">
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-3">
-                            <FileText className="h-5 w-5 text-red-400" />
-                            <p className="text-sm font-medium text-foreground">{r.title}</p>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 text-sm text-foreground">{r.type}</td>
-                        <td className="px-4 py-3 text-sm text-muted-foreground">{r.lesson?.title || "–"}</td>
-                        <td className="px-4 py-3">
-                          <div className="flex gap-1">
-                            <a href={r.type === "LINK" ? r.url : getMaterialDownloadUrl(r.id)} target="_blank" rel="noopener noreferrer">
-                              <Button variant="ghost" size="sm"><Eye className="h-3 w-3" /></Button>
-                            </a>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-=======
           {/* ─── Lessons with Resources ─── */}
           <LessonsWithResources
             lessons={lessons}
@@ -427,7 +303,6 @@ export default function ContentUpload() {
             onEditMaterial={(m) => { setEditingMaterial({ ...m }); setEditLinkUrl(m.type === "LINK" ? m.url : ""); setShowEditMaterial(true); }}
             onDeleteMaterial={handleDeleteMaterial}
           />
->>>>>>> Stashed changes
         </>
       )}
 
@@ -498,13 +373,10 @@ export default function ContentUpload() {
               <Input value={newLesson.title} onChange={(e) => setNewLesson({ ...newLesson, title: e.target.value })} placeholder="Lesson title" className="bg-secondary border-border" />
             </div>
             <div>
-<<<<<<< Updated upstream
-=======
               <label className="text-sm font-medium text-foreground mb-1 block">Month</label>
               <Input type="month" value={newLesson.month} onChange={(e) => setNewLesson({ ...newLesson, month: e.target.value })} className="bg-secondary border-border" />
             </div>
             <div>
->>>>>>> Stashed changes
               <label className="text-sm font-medium text-foreground mb-1 block">Content / Description</label>
               <Textarea value={newLesson.content} onChange={(e) => setNewLesson({ ...newLesson, content: e.target.value })} placeholder="Optional description or notes" className="bg-secondary border-border min-h-[100px]" />
             </div>
@@ -526,13 +398,10 @@ export default function ContentUpload() {
                 <Input value={editingLesson.title} onChange={(e) => setEditingLesson({ ...editingLesson, title: e.target.value })} className="bg-secondary border-border" />
               </div>
               <div>
-<<<<<<< Updated upstream
-=======
                 <label className="text-sm font-medium text-foreground mb-1 block">Month</label>
                 <Input type="month" value={editingLesson.month || ""} onChange={(e) => setEditingLesson({ ...editingLesson, month: e.target.value })} className="bg-secondary border-border" />
               </div>
               <div>
->>>>>>> Stashed changes
                 <label className="text-sm font-medium text-foreground mb-1 block">Content / Description</label>
                 <Textarea value={editingLesson.content || ""} onChange={(e) => setEditingLesson({ ...editingLesson, content: e.target.value })} className="bg-secondary border-border min-h-[100px]" />
               </div>
@@ -544,9 +413,6 @@ export default function ContentUpload() {
         </DialogContent>
       </Dialog>
 
-<<<<<<< Updated upstream
-
-=======
       {/* ─── Edit Material Dialog ─── */}
       <Dialog open={showEditMaterial} onOpenChange={(open) => { setShowEditMaterial(open); if (!open) { setEditFile(null); setEditLinkUrl(""); } }}>
         <DialogContent className="bg-card border-border">
@@ -604,7 +470,6 @@ export default function ContentUpload() {
           )}
         </DialogContent>
       </Dialog>
->>>>>>> Stashed changes
     </div>
   );
 }

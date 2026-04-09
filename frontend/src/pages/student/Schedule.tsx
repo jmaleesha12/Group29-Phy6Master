@@ -4,6 +4,7 @@ import { Calendar as CalIcon, Clock, X, Video, ExternalLink } from "lucide-react
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useTimetable, useStudentCourses, dayDisplayName, formatTime, dayToGridIndex } from "@/lib/api";
+import { get } from "@/lib/api-client";
 import type { TimetableSlot } from "@/lib/api";
 
 const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -20,6 +21,22 @@ export default function Schedule() {
   // Filter timetable to enrolled courses only
   const enrolledIds = new Set(courses.map((c) => c.id));
   const filtered = timetable.filter((s) => enrolledIds.has(s.course?.id));
+
+  const handleJoinClass = async (slot: TimetableSlot) => {
+    if (!userId || !slot.course?.id || !slot.meetingLink) return;
+    try {
+      const access = await get<{ canAccess: boolean; status: string; message: string }>(
+        `/api/student/enrollments/access/${userId}/${slot.course.id}`
+      );
+      if (!access.canAccess) {
+        toast.error(access.message);
+        return;
+      }
+      window.open(slot.meetingLink, "_blank");
+    } catch {
+      toast.error("Unable to verify class access at the moment.");
+    }
+  };
 
   if (isLoading) {
     return <div className="p-6 text-muted-foreground">Loading schedule...</div>;
@@ -89,7 +106,7 @@ export default function Schedule() {
                 {selected.location && <p className="flex items-center gap-2 text-muted-foreground"><Video className="h-4 w-4" /> {selected.location}</p>}
                 {selected.meetingLink && (
                   <Button className="w-full mt-2 gap-1.5 gradient-cta text-primary-foreground"
-                    onClick={() => window.open(selected.meetingLink, "_blank")}>
+                    onClick={() => handleJoinClass(selected)}>
                     <ExternalLink className="h-4 w-4" /> Join Live Class
                   </Button>
                 )}

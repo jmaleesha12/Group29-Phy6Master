@@ -1,10 +1,10 @@
 package com.example.Phy6_Master.model;
 
 import jakarta.persistence.*;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import java.util.List;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "courses")
@@ -31,20 +31,24 @@ public class Course {
     @Column(length = 1000)
     private String imageUrl;
 
-    // Cascade delete for lessons
-    @JsonIgnore
+    @Column(nullable = false)
+    private Double price = 0.0;
+
     @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<Lesson> lessons = new ArrayList<>();
 
-    // Cascade delete for timetable slots
-    @JsonIgnore
     @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<Enrollment> enrollments = new ArrayList<>();
+
+    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<TimetableSlot> timetableSlots = new ArrayList<>();
 
-    // Cascade delete for enrollments
-    @JsonIgnore
     @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Enrollment> enrollments = new ArrayList<>();
+    @JsonIgnore
+    private List<Announcement> announcements = new ArrayList<>();
 
     public Course() {
     }
@@ -124,15 +128,43 @@ public class Course {
         this.imageUrl = imageUrl;
     }
 
+    public Double getPrice() {
+        return price;
+    }
+
+    public void setPrice(Double price) {
+        this.price = price;
+    }
+
     public List<Lesson> getLessons() {
         return lessons;
+    }
+
+    public void setLessons(List<Lesson> lessons) {
+        this.lessons = lessons;
+    }
+
+    public List<Enrollment> getEnrollments() {
+        return enrollments;
+    }
+
+    public void setEnrollments(List<Enrollment> enrollments) {
+        this.enrollments = enrollments;
     }
 
     public List<TimetableSlot> getTimetableSlots() {
         return timetableSlots;
     }
 
-    public List<Enrollment> getEnrollments() {
-        return enrollments;
+    public void setTimetableSlots(List<TimetableSlot> timetableSlots) {
+        this.timetableSlots = timetableSlots;
+    }
+
+    public List<Announcement> getAnnouncements() {
+        return announcements;
+    }
+
+    public void setAnnouncements(List<Announcement> announcements) {
+        this.announcements = announcements;
     }
 }

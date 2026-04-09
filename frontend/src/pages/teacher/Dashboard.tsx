@@ -43,7 +43,7 @@ export default function TeacherDashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-display font-bold text-foreground">Welcome back, {teacherName}! 👋</h1>
+        <h1 className="text-2xl font-display font-bold text-foreground">Welcome back, {teacherName}! </h1>
         <p className="text-muted-foreground mt-1">Here's what's happening today</p>
       </div>
 

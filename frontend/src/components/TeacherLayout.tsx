@@ -3,7 +3,7 @@ import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard, Users, BookOpen, Upload, CalendarDays,
-  Menu, GraduationCap, LogOut, ChevronDown,
+  Menu, GraduationCap, LogOut, ChevronDown, Bell,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -13,6 +13,7 @@ const sidebarLinks = [
   { label: "Classes", icon: BookOpen, path: "/teacher/classes" },
   { label: "Content", icon: Upload, path: "/teacher/content" },
   { label: "Timetable", icon: CalendarDays, path: "/teacher/timetable" },
+  { label: "Announcements", icon: Bell, path: "/teacher/announcements" },
 ];
 
 export default function TeacherLayout() {

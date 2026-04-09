@@ -17,13 +17,19 @@ import Schedule from "./pages/student/Schedule";
 import SettingsPage from "./pages/student/Settings";
 import TeacherDashboard from "./pages/teacher/Dashboard";
 import MyCourses from "./pages/student/MyCourses";
-import CourseDetail from "./pages/student/CourseDetail";
+import CourseDetails from "./pages/student/CourseDetails";
 import Students from "./pages/teacher/Students";
 import ClassManagement from "./pages/teacher/ClassManagement";
 import ContentUpload from "./pages/teacher/ContentUpload";
 import Timetable from "./pages/teacher/Timetable";
+import Announcements from "./pages/teacher/Announcements";
 import TeacherLayout from "./components/TeacherLayout";
 import NotFound from "./pages/NotFound";
+import PaymentPage from "./pages/student/PaymentPage";
+import NotificationsPage from "./pages/student/NotificationsPage";
+import AccountantLayout from "./components/AccountantLayout";
+import PendingPaymentsList from "./pages/accountant/PendingPaymentsList";
+import PaymentVerificationDetail from "./pages/accountant/PaymentVerificationDetail";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -57,15 +63,27 @@ const App = () => {
               <Route path="classes" element={<ClassManagement />} />
               <Route path="content" element={<ContentUpload />} />
               <Route path="timetable" element={<Timetable />} />
+              <Route path="announcements" element={<Announcements />} />
               <Route index element={<Navigate to="dashboard" replace />} />
             </Route>
             <Route path="/student" element={<StudentLayout />}>
               <Route index element={<Navigate to="dashboard" replace />} />
               <Route path="dashboard" element={<Dashboard />} />
+              <Route path="classes" element={<StudentClasses />} />
+              <Route path="classes/:classId/payment" element={<PaymentPage />} />
+              <Route path="notifications" element={<NotificationsPage />} />
+              <Route path="schedule" element={<Schedule />} />
+              <Route path="settings" element={<SettingsPage />} />
+            </Route>
+            <Route path="/accountant" element={<AccountantLayout />}>
+              <Route index element={<Navigate to="payments" replace />} />
+              <Route path="payments" element={<PendingPaymentsList />} />
+              <Route path="payments/:paymentId" element={<PaymentVerificationDetail />} />
+            </Route>
               <Route path="resources" element={<Resources />} />
               <Route path="classes" element={<StudentClasses />} />
               <Route path="courses" element={<MyCourses />} />
-              <Route path="courses/:courseId" element={<CourseDetail />} />
+              <Route path="courses/:courseId" element={<CourseDetails />} />
               <Route path="schedule" element={<Schedule />} />
               <Route path="settings" element={<SettingsPage />} />
             </Route>

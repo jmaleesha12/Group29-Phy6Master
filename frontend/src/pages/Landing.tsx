@@ -1,14 +1,16 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Zap, Brain, Users, Mail, ChevronDown, Globe, Phone, MapPin, Quote } from "lucide-react";
+import { GraduationCap, Brain, Users, Mail, ChevronDown, Globe, Phone, MapPin, Quote } from "lucide-react";
 import teacherPhoto from "@/assets/teacher-full.png";
 import { Button } from "@/components/ui/button";
 import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
+import { get } from "@/lib/api-client";
+import type { Course, TimetableSlot } from "@/lib/api";
+import { dayDisplayName, formatTime } from "@/lib/api";
 
 const navLinks = ["Home", "About", "Classes", "Results", "Contact"];
-const categories = ["Physics"];
 
 const testimonials = [
   { name: "Kasun Perera", batch: "2025 A/L", text: "Phy6 Master completely changed how I understand Physics. The teaching style is very easy to follow and exam-oriented." },
@@ -17,34 +19,55 @@ const testimonials = [
   { name: "Sachini Jayawardena", batch: "2024 A/L", text: "Best Physics class I've attended. The revision sessions and past paper discussions were extremely helpful." },
 ];
 
-const courses = [
-  { id: 1, subject: "Physics", badge: "PHYSICS", badgeColor: "bg-primary text-primary-foreground", title: "Physics – Theory | Mini Group Class | 2027 A/L", day: "Sunday", time: "8:30 AM" },
-  { id: 2, subject: "Physics", badge: "PHYSICS", badgeColor: "bg-info text-info-foreground", title: "Physics – Theory | Hybrid Online | 2027 A/L", day: "Sunday", time: "11:00 AM" },
-  { id: 3, subject: "Physics", badge: "PHYSICS", badgeColor: "bg-info text-info-foreground", title: "Physics – Theory | Batch 02 | 2027 A/L", day: "Saturday", time: "1:30 PM" },
-  { id: 4, subject: "Physics", badge: "PHYSICS", badgeColor: "bg-primary text-primary-foreground", title: "Physics – Revision | Online | 2027 A/L", day: "Sunday", time: "8:00 PM" },
-];
+interface CourseWithSchedule extends Course {
+  day?: string;
+  time?: string;
+}
 
 export default function Landing() {
-  const [catOpen, setCatOpen] = useState(false);
+  const [courses, setCourses] = useState<CourseWithSchedule[]>([]);
+
+  useEffect(() => {
+    async function fetchCourses() {
+      try {
+        const courseList = await get<Course[]>("/api/courses");
+        let slots: TimetableSlot[] = [];
+        try {
+          slots = await get<TimetableSlot[]>("/api/timetable");
+        } catch {
+          // timetable may not exist yet
+        }
+        const slotMap = new Map<number, TimetableSlot>();
+        for (const s of slots) {
+          if (!slotMap.has(s.course.id)) slotMap.set(s.course.id, s);
+        }
+        setCourses(
+          courseList.map((c) => {
+            const slot = slotMap.get(c.id);
+            return {
+              ...c,
+              day: slot ? dayDisplayName(slot.dayOfWeek) : undefined,
+              time: slot ? formatTime(slot.startTime) : undefined,
+            };
+          })
+        );
+      } catch {
+        setCourses([]);
+      }
+    }
+    fetchCourses();
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
       {/* Nav */}
       <nav className="flex items-center justify-between px-6 py-4 max-w-7xl mx-auto">
         <Link to="/" className="flex items-center gap-2">
-          <Zap className="h-6 w-6 text-primary" />
+          <GraduationCap className="h-6 w-6 text-primary" />
           <span className="font-display text-lg font-bold text-foreground">Phy6 Master</span>
         </Link>
 
         <div className="hidden md:flex items-center gap-1">
-          <button onClick={() => setCatOpen(!catOpen)} className="relative flex items-center gap-1 px-3 py-2 text-sm text-primary font-medium">
-            <Zap className="h-4 w-4" /> Categories <ChevronDown className="h-3 w-3" />
-            {catOpen && (
-              <div className="absolute top-full left-0 mt-1 w-48 rounded-lg border border-border bg-card p-2 shadow-card z-50">
-                {categories.map((c) => <div key={c} className="px-3 py-2 text-sm rounded hover:bg-accent cursor-pointer">{c}</div>)}
-              </div>
-            )}
-          </button>
           {[
             { label: "Home", to: "/" },
             { label: "About", to: "/about" },
@@ -94,17 +117,39 @@ export default function Landing() {
         </motion.div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {courses.map((c, i) => (
-            <motion.div key={c.id} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}
-              className="rounded-xl border border-border bg-card p-4 hover:shadow-glow transition-shadow cursor-pointer">
-              <div className="aspect-square rounded-lg bg-accent flex items-center justify-center mb-4">
-                <Brain className="h-12 w-12 text-muted-foreground" />
-              </div>
-              <span className={`text-xs font-bold px-2 py-1 rounded ${c.badgeColor}`}>{c.badge}</span>
-              <h3 className="mt-2 font-display text-sm font-semibold text-foreground">{c.title}</h3>
-              <p className="mt-1 text-xs text-destructive flex items-center gap-1">🔴 {c.day} | {c.time}</p>
-            </motion.div>
-          ))}
+          {courses.length === 0 ? (
+            <p className="col-span-full text-center text-muted-foreground">No classes available yet.</p>
+          ) : (
+            courses.map((c, i) => (
+              <Link to="/classes" key={c.id}>
+                <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}
+                  className="rounded-xl border border-border bg-card p-4 hover:shadow-glow hover:border-primary/40 hover:-translate-y-1 transition-all duration-300 cursor-pointer group">
+                  <div className="aspect-square rounded-lg bg-accent flex items-center justify-center mb-4 group-hover:bg-primary/10 transition-colors overflow-hidden">
+                    {c.imageUrl ? (
+                      <img src={c.imageUrl} alt={c.title} className="w-full h-full object-cover" />
+                    ) : (
+                      <Brain className="h-12 w-12 text-muted-foreground group-hover:text-primary transition-colors" />
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap mb-2">
+                    {c.subject && (
+                      <span className="text-xs font-bold px-2 py-1 rounded bg-primary text-primary-foreground">{c.subject.toUpperCase()}</span>
+                    )}
+                    {c.type && (
+                      <span className="text-xs font-bold px-2 py-1 rounded bg-blue-500/15 text-blue-600">{c.type}</span>
+                    )}
+                    {c.batch && (
+                      <span className="text-xs font-bold px-2 py-1 rounded bg-green-500/15 text-green-600">{c.batch}</span>
+                    )}
+                  </div>
+                  <h3 className="font-display text-sm font-semibold text-foreground group-hover:text-primary transition-colors">{c.title}</h3>
+                  {c.day && c.time && (
+                    <p className="mt-1 text-xs text-destructive flex items-center gap-1">🔴 {c.day} | {c.time}</p>
+                  )}
+                </motion.div>
+              </Link>
+            ))
+          )}
         </div>
         <div className="mt-10 text-center">
           <Link to="/classes">
@@ -158,7 +203,7 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-6 py-12 grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <Zap className="h-5 w-5 text-primary" />
+              <GraduationCap className="h-5 w-5 text-primary" />
               <span className="font-display text-lg font-bold text-primary">Phy6 Master</span>
             </div>
             <p className="text-sm text-muted-foreground">Making quality education accessible and personalized for everyone, everywhere through AI innovation.</p>

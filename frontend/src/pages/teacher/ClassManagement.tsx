@@ -13,6 +13,7 @@ const BATCHES = ["2026 A/L", "2027 A/L", "2028 A/L"];
 const TYPES = ["Theory", "Revision", "Paper"];
 
 export default function ClassManagement() {
+  const teacherId = Number(localStorage.getItem("authUserId")) || 0;
   const { data: courses = [], isLoading } = useCourses();
   const createCourse = useCreateCourse();
   const updateCourse = useUpdateCourse();
@@ -29,7 +30,7 @@ export default function ClassManagement() {
       toast.error("Please enter a title");
       return;
     }
-    createCourse.mutate(newClass, {
+    createCourse.mutate({ ...newClass, teacherId }, {
       onSuccess: () => {
         setNewClass({ title: "", description: "", subject: "", batch: "", type: "", imageUrl: "" });
         setShowAdd(false);

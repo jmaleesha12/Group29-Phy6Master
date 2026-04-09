@@ -1,99 +1,101 @@
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Search, Filter, Bookmark, BookmarkCheck, Download, Eye, X, FileText } from "lucide-react";
+import { motion } from "framer-motion";
+import { Search, Download, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-
-const categories = ["All", "Physics"];
+import { useStudentCourses, useMaterials, getMaterialDownloadUrl } from "@/lib/api";
+import { get } from "@/lib/api-client";
 
 export default function Resources() {
-    const [resources, setResources] = useState();
-    const [search, setSearch] = useState("");
-    const [category, setCategory] = useState("All");
-    const [preview, setPreview] = useState<typeof Resources | null>(null);
+  const userId = Number(localStorage.getItem("authUserId")) || undefined;
+  const { data: courses = [], isLoading: loadingCourses } = useStudentCourses(userId);
+  const [selectedCourseId, setSelectedCourseId] = useState<number | undefined>();
+  const { data: materials = [], isLoading: loadingMaterials } = useMaterials(selectedCourseId, userId);
+  const [search, setSearch] = useState("");
 
-    const filtered = resources.filter((r) => {
-        const matchSearch = r.title.toLowerCase().includes(search.toLowerCase());
-        const matchCat = category === "All" || r.category === category;
-        return matchSearch && matchCat;
-    });
+  const handleSelectCourse = async (value: string) => {
+    const courseId = Number(value);
+    if (!userId || !courseId) {
+      setSelectedCourseId(courseId || undefined);
+      return;
+    }
 
-    const toggleBookmark = (id: number) => {
-        setResources((prev) => prev.map((r) => (r.id === id ? { ...r, bookmarked: !r.bookmarked } : r)));
-        toast.success("Bookmark updated");
-    };
+    try {
+      const access = await get<{ canAccess: boolean; status: string; message: string }>(
+        `/api/student/enrollments/access/${userId}/${courseId}`
+      );
+      if (!access.canAccess) {
+        toast.error(access.message);
+        setSelectedCourseId(undefined);
+        return;
+      }
+      setSelectedCourseId(courseId);
+    } catch {
+      toast.error("Unable to verify class access at the moment.");
+      setSelectedCourseId(undefined);
+    }
+  };
 
-    const download = (title: string) => toast.success(`Downloading: ${title}`);
+  const filtered = materials.filter((r) =>
+    r.title.toLowerCase().includes(search.toLowerCase()),
+  );
 
-    return (
-        <div className="space-y-6">
-            <motion.h1 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="font-display text-2xl font-bold text-foreground">Resources</motion.h1>
+  return (
+    <div className="space-y-6">
+      <motion.h1 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="font-display text-2xl font-bold text-foreground">Resources</motion.h1>
 
-            <div className="flex flex-col sm:flex-row gap-3">
-                <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search resources..." className="pl-10 bg-secondary border-border" />
-                </div>
-                <div className="flex gap-2 flex-wrap">
-                    {categories.map((c) => (
-                        <Button key={c} size="sm" variant={category === c ? "default" : "outline"} onClick={() => setCategory(c)}
-                                className={category === c ? "gradient-cta text-primary-foreground" : "border-border text-foreground"}>{c}</Button>
-                    ))}
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filtered.map((r, i) => (
-                    <motion.div key={r.id} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-                                className="rounded-xl border border-border bg-card p-5 shadow-card hover:shadow-glow transition-shadow">
-                        <div className="flex items-start justify-between">
-                            <div className="h-10 w-10 rounded-lg bg-accent flex items-center justify-center"><FileText className="h-5 w-5 text-primary" /></div>
-                            <button onClick={() => toggleBookmark(r.id)}>
-                                {r.bookmarked ? <BookmarkCheck className="h-5 w-5 text-primary" /> : <Bookmark className="h-5 w-5 text-muted-foreground hover:text-primary" />}
-                            </button>
-                        </div>
-                        <h3 className="mt-3 font-display font-semibold text-sm text-foreground">{r.title}</h3>
-                        <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
-                            <span className="px-2 py-0.5 rounded bg-accent text-accent-foreground">{r.category}</span>
-                            <span>{r.type}</span><span>·</span><span>{r.size}</span>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-2">{r.date}</p>
-                        <div className="flex gap-2 mt-4">
-                            <Button size="sm" variant="outline" className="flex-1 border-border text-foreground" onClick={() => setPreview(r)}>
-                                <Eye className="h-3 w-3 mr-1" /> Preview
-                            </Button>
-                            <Button size="sm" className="flex-1 gradient-cta text-primary-foreground" onClick={() => download(r.title)}>
-                                <Download className="h-3 w-3 mr-1" /> Download
-                            </Button>
-                        </div>
-                    </motion.div>
-                ))}
-            </div>
-
-            {/* Preview Modal */}
-            <AnimatePresence>
-                {preview && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setPreview(null)}>
-                        <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} onClick={(e) => e.stopPropagation()}
-                                    className="w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-card">
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="font-display font-bold text-foreground">{preview.title}</h3>
-                                <button onClick={() => setPreview(null)}><X className="h-5 w-5 text-muted-foreground hover:text-foreground" /></button>
-                            </div>
-                            <div className="aspect-video rounded-lg bg-secondary flex items-center justify-center mb-4">
-                                <FileText className="h-16 w-16 text-muted-foreground" />
-                            </div>
-                            <div className="flex gap-2 text-xs text-muted-foreground mb-4">
-                                <span>{preview.category}</span><span>·</span><span>{preview.type}</span><span>·</span><span>{preview.size}</span><span>·</span><span>{preview.date}</span>
-                            </div>
-                            <Button className="w-full gradient-cta text-primary-foreground" onClick={() => { download(preview.title); setPreview(null); }}>
-                                <Download className="h-4 w-4 mr-2" /> Download
-                            </Button>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search resources..." className="pl-10 bg-secondary border-border" />
         </div>
-    );
+        <Select value={selectedCourseId ? String(selectedCourseId) : ""} onValueChange={handleSelectCourse}>
+          <SelectTrigger className="w-64 bg-secondary border-border"><SelectValue placeholder="Select a course" /></SelectTrigger>
+          <SelectContent>
+            {courses.map((c) => <SelectItem key={c.id} value={String(c.id)}>{c.title}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {loadingCourses ? (
+        <p className="text-sm text-muted-foreground">Loading...</p>
+      ) : !selectedCourseId ? (
+        <div className="rounded-xl border border-border bg-card p-10 shadow-card text-center">
+          <p className="text-muted-foreground">Select a course above to view its resources.</p>
+        </div>
+      ) : loadingMaterials ? (
+        <p className="text-sm text-muted-foreground">Loading materials...</p>
+      ) : filtered.length === 0 ? (
+        <div className="rounded-xl border border-border bg-card p-10 shadow-card text-center">
+          <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+          <p className="text-muted-foreground">No resources available for this course yet.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filtered.map((r, i) => (
+            <motion.div key={r.id} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
+              className="rounded-xl border border-border bg-card p-5 shadow-card hover:shadow-glow transition-shadow">
+              <div className="flex items-start">
+                <div className="h-10 w-10 rounded-lg bg-accent flex items-center justify-center"><FileText className="h-5 w-5 text-primary" /></div>
+              </div>
+              <h3 className="mt-3 font-display font-semibold text-sm text-foreground">{r.title}</h3>
+              <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                <span className="px-2 py-0.5 rounded bg-accent text-accent-foreground">{r.type}</span>
+                {r.lesson && <span>· {r.lesson.title}</span>}
+              </div>
+              <div className="flex gap-2 mt-4">
+                <a href={getMaterialDownloadUrl(r.id)} target="_blank" rel="noopener noreferrer" className="flex-1">
+                  <Button size="sm" className="w-full gradient-cta text-primary-foreground">
+                    <Download className="h-3 w-3 mr-1" /> Download
+                  </Button>
+                </a>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }

@@ -13,11 +13,7 @@ export function useLessons(courseId: number | undefined) {
 export function useCreateLesson() {
   const qc = useQueryClient();
   return useMutation({
-<<<<<<< Updated upstream
-    mutationFn: ({ courseId, ...lesson }: { courseId: number; title: string; content?: string }) =>
-=======
     mutationFn: ({ courseId, ...lesson }: { courseId: number; title: string; content?: string; month?: string }) =>
->>>>>>> Stashed changes
       post<Lesson>(`/api/lessons/courses/${courseId}`, lesson),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["lessons"] }),
   });
@@ -26,11 +22,7 @@ export function useCreateLesson() {
 export function useUpdateLesson() {
   const qc = useQueryClient();
   return useMutation({
-<<<<<<< Updated upstream
-    mutationFn: ({ id, ...data }: { id: number; title: string; content?: string }) =>
-=======
     mutationFn: ({ id, ...data }: { id: number; title: string; content?: string; month?: string }) =>
->>>>>>> Stashed changes
       put<Lesson>(`/api/lessons/${id}`, data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["lessons"] }),
   });
