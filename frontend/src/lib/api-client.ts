@@ -14,18 +14,17 @@ async function handleResponse<T>(res: Response): Promise<T> {
     let message = `Request failed (${res.status})`;
     try {
       const text = await res.text();
-      // Try to parse as JSON first
       try {
         const json = JSON.parse(text);
         message = json.message || json.error || text;
       } catch {
-        // Plain text error from backend
         if (text) message = text;
       }
-    } catch { /* ignore */ }
+    } catch {
+      // ignore
+    }
     throw new ApiError(message, res.status);
   }
-  // 204 No Content
   if (res.status === 204) return undefined as unknown as T;
   return res.json();
 }

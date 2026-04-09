@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Zap, User, Mail, Lock, ShieldCheck, Eye, EyeOff, ArrowRight, AtSign, Phone } from "lucide-react";
+import { Zap, User, Mail, Lock, ShieldCheck, Eye, EyeOff, ArrowRight, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -58,6 +58,7 @@ export default function SignUp() {
       </nav>
 
       <div className="max-w-lg mx-auto px-4 py-12">
+        <p className="text-center text-muted-foreground mb-8">Start your learning journey with Phy6 Master today</p>
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
           className="rounded-2xl bg-card border border-border p-8 shadow-card">
@@ -66,7 +67,7 @@ export default function SignUp() {
               <label className="text-sm font-medium text-foreground mb-1.5 block">Full Name</label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input value={form.name} onChange={set("name")} className="pl-10 bg-secondary border-border" />
+                <Input value={form.name} onChange={set("name")} placeholder="John Doe" className="pl-10 bg-secondary border-border" />
               </div>
             </div>
             <div>
@@ -116,7 +117,6 @@ export default function SignUp() {
             </Button>
           </form>
         </motion.div>
-      </div>
     </div>
   );
 }

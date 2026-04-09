@@ -39,7 +39,6 @@ public class TimetableController {
 
     @Autowired
     private UserRepository userRepository;
-
     // ── POST /api/timetable ───────────────────────────────────────────────────
 
     /**
@@ -108,7 +107,6 @@ public class TimetableController {
                             .body(Map.of("message", access.getMessage(), "status", access.getStatus()));
                 }
             }
-
             List<TimetableSlot> slots = timetableService.getSlotsByCourse(courseId);
             return ResponseEntity.ok(slots);
         } catch (RuntimeException e) {

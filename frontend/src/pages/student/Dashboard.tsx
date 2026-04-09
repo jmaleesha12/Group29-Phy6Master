@@ -2,9 +2,9 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bell, Check, BookOpen, CalendarDays, Clock, ExternalLink, X, ChevronLeft, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useAnnouncementsForStudent, useStudentCourses, useTimetable, dayDisplayName, formatTime } from "@/lib/api";
+import { useAnnouncementsForStudent, useTimetable, dayDisplayName, formatTime } from "@/lib/api";
 import type { TimetableSlot, Announcement } from "@/lib/api";
-import { useAllEnrollments, useClassAccess } from "@/lib/api/students";
+import { useAllEnrollments } from "@/lib/api/students";
 import type { EnrollmentSummary } from "@/lib/api/students";
 
 

@@ -206,6 +206,11 @@ export default function Landing() {
               <GraduationCap className="h-5 w-5 text-primary" />
               <span className="font-display text-lg font-bold text-primary">Phy6 Master</span>
             </div>
+            <p className="text-sm text-muted-foreground">Making quality education accessible and personalized for everyone, everywhere through AI innovation.</p>
+            <div className="flex gap-3 mt-4">
+              <Globe className="h-5 w-5 text-muted-foreground hover:text-primary cursor-pointer" />
+              <Users className="h-5 w-5 text-muted-foreground hover:text-primary cursor-pointer" />
+            </div>
           </div>
           <div>
             <h4 className="font-display font-bold text-xs tracking-wider text-foreground mb-4">PRODUCTS</h4>

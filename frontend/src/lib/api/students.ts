@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { get } from "@/lib/api-client";
-import type { Student, Course } from "./types";
+import type { Student, Course, LessonWithMaterials, MaterialResponse } from "./types";
 
 export type EnrollmentSummary = {
   id: number;
@@ -18,7 +18,6 @@ export function useAllStudents() {
   });
 }
 
-/** Get the Student entity for the currently logged-in user (by User ID). */
 export function useStudentByUser(userId: number | undefined) {
   return useQuery<Student>({
     queryKey: ["student-by-user", userId],
@@ -27,7 +26,6 @@ export function useStudentByUser(userId: number | undefined) {
   });
 }
 
-/** Get enrolled courses for a student identified by their User ID. */
 export function useStudentCourses(userId: number | undefined) {
   return useQuery<Course[]>({
     queryKey: ["student-courses", userId],
@@ -47,7 +45,7 @@ export function usePendingEnrollments(userId?: number) {
 export function useClassAccess(userId?: number, courseId?: number) {
   return useQuery({
     queryKey: ["class-access", userId, courseId],
-    queryFn: () => get<{canAccess: boolean; status: string; message: string}>(`/api/student/enrollments/access/${userId}/${courseId}`),
+    queryFn: () => get<{ canAccess: boolean; status: string; message: string }>(`/api/student/enrollments/access/${userId}/${courseId}`),
     enabled: !!userId && !!courseId,
   });
 }
@@ -61,21 +59,37 @@ export function useAllEnrollments(userId?: number) {
 }
 
 export type PaymentHistoryResponseDTO = {
-    id: number;
-    courseId: number;
-    courseName: string;
-    amount: number;
-    paymentMethod: string;
-    status: string;
-    submittedAt: string;
-    verifiedAt: string;
-    rejectionReason: string;
+  id: number;
+  courseId: number;
+  courseName: string;
+  amount: number;
+  paymentMethod: string;
+  status: string;
+  submittedAt: string;
+  verifiedAt: string;
+  rejectionReason: string;
 };
 
 export function usePaymentHistory(studentId?: number) {
-    return useQuery<PaymentHistoryResponseDTO[]>({
-        queryKey: ["student-payment-history", studentId],
-        queryFn: () => get<PaymentHistoryResponseDTO[]>(`/api/student/payments/history/${studentId}`),
-        enabled: !!studentId,
-    });
+  return useQuery<PaymentHistoryResponseDTO[]>({
+    queryKey: ["student-payment-history", studentId],
+    queryFn: () => get<PaymentHistoryResponseDTO[]>(`/api/student/payments/history/${studentId}`),
+    enabled: !!studentId,
+  });
+}
+
+export function useCourseLessons(userId: number | undefined, courseId: number | undefined) {
+  return useQuery<LessonWithMaterials[]>({
+    queryKey: ["course-lessons", userId, courseId],
+    queryFn: () => get<LessonWithMaterials[]>(`/api/students/by-user/${userId}/courses/${courseId}/lessons`),
+    enabled: !!userId && !!courseId,
+  });
+}
+
+export function useLessonMaterials(userId: number | undefined, lessonId: number | undefined) {
+  return useQuery<MaterialResponse[]>({
+    queryKey: ["lesson-materials", userId, lessonId],
+    queryFn: () => get<MaterialResponse[]>(`/api/students/by-user/${userId}/lessons/${lessonId}/materials`),
+    enabled: !!userId && !!lessonId,
+  });
 }

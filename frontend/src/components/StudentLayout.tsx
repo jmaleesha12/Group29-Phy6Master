@@ -9,6 +9,7 @@ import NotificationBell from "./NotificationBell";
 
 const sidebarLinks = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/student/dashboard" },
+  { label: "Resources", icon: BookOpen, path: "/student/resources" },
   { label: "Classes", icon: BookOpen, path: "/student/classes" },
   { label: "Schedule", icon: Calendar, path: "/student/schedule" },
   { label: "Notifications", icon: Bell, path: "/student/notifications" },
@@ -78,9 +79,7 @@ export default function StudentLayout() {
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Notification Bell */}
             <NotificationBell userId={userId} />
-            {/* Profile */}
             <div className="relative">
               <button onClick={() => setProfileOpen(!profileOpen)}
                 className="flex items-center gap-2 p-1.5 pr-3 rounded-lg hover:bg-accent transition-colors">

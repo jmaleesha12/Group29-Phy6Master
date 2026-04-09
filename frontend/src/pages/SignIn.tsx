@@ -76,7 +76,7 @@ export default function SignIn() {
               <label className="text-sm font-medium text-foreground mb-1.5 block">Email or Username</label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input value={email} onChange={(e) => setEmail(e.target.value)} className="pl-10 bg-secondary border-border" />
+                <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="e.g., alex@university.com" className="pl-10 bg-secondary border-border" />
               </div>
             </div>
             <div>

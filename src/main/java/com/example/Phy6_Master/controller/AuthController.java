@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
+@CrossOrigin(origins = "*")
 @RequestMapping("/api/auth")
 public class AuthController {
 
@@ -68,7 +69,6 @@ public class AuthController {
                     .body(Map.of("message", "Error creating teacher account: " + exception.getMessage()));
         }
     }
-
     @PostMapping("/signup/tutor")
     public ResponseEntity<?> signUpTutor(@Valid @RequestBody TutorSignUpRequest request) {
         try {

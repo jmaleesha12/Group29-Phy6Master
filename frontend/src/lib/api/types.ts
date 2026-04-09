@@ -50,6 +50,22 @@ export interface Lesson {
   courseId?: number; // exposed from backend @JsonProperty
 }
 
+export interface MaterialResponse {
+  id: number;
+  title: string;
+  type: "PDF" | "VIDEO" | "LINK" | "NOTE";
+  url: string;
+  lessonId: number;
+}
+
+export interface LessonWithMaterials {
+  id: number;
+  title: string;
+  content?: string;
+  courseId: number;
+  materials: MaterialResponse[];
+}
+
 export interface LearningMaterial {
   id: number;
   title: string;

@@ -9,7 +9,6 @@ public class AuthSignUpRequest {
     @NotBlank
     private String name;
 
-    @NotBlank
     @Email
     private String email;
 

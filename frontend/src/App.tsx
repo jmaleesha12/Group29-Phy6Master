@@ -11,10 +11,13 @@ import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 import StudentLayout from "./components/StudentLayout";
 import Dashboard from "./pages/student/Dashboard";
+import Resources from "./pages/student/Resources";
 import StudentClasses from "./pages/student/Classes";
 import Schedule from "./pages/student/Schedule";
 import SettingsPage from "./pages/student/Settings";
 import TeacherDashboard from "./pages/teacher/Dashboard";
+import MyCourses from "./pages/student/MyCourses";
+import CourseDetails from "./pages/student/CourseDetails";
 import Students from "./pages/teacher/Students";
 import ClassManagement from "./pages/teacher/ClassManagement";
 import ContentUpload from "./pages/teacher/ContentUpload";
@@ -76,6 +79,13 @@ const App = () => {
               <Route index element={<Navigate to="payments" replace />} />
               <Route path="payments" element={<PendingPaymentsList />} />
               <Route path="payments/:paymentId" element={<PaymentVerificationDetail />} />
+            </Route>
+              <Route path="resources" element={<Resources />} />
+              <Route path="classes" element={<StudentClasses />} />
+              <Route path="courses" element={<MyCourses />} />
+              <Route path="courses/:courseId" element={<CourseDetails />} />
+              <Route path="schedule" element={<Schedule />} />
+              <Route path="settings" element={<SettingsPage />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

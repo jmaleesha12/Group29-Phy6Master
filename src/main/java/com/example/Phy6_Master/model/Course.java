@@ -3,7 +3,6 @@ package com.example.Phy6_Master.model;
 import jakarta.persistence.*;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,7 +21,7 @@ public class Course {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "teacher_id", nullable = true)
-    @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private User teacher;
 
     private String batch;
@@ -54,8 +53,7 @@ public class Course {
     public Course() {
     }
 
-    public Course(Long id, String title, String description, User teacher, String batch, String subject, String type,
-            String imageUrl) {
+    public Course(Long id, String title, String description, User teacher, String batch, String subject, String type, String imageUrl) {
         this.id = id;
         this.title = title;
         this.description = description;
@@ -130,6 +128,14 @@ public class Course {
         this.imageUrl = imageUrl;
     }
 
+    public Double getPrice() {
+        return price;
+    }
+
+    public void setPrice(Double price) {
+        this.price = price;
+    }
+
     public List<Lesson> getLessons() {
         return lessons;
     }
@@ -154,11 +160,11 @@ public class Course {
         this.timetableSlots = timetableSlots;
     }
 
-    public Double getPrice() {
-        return price;
+    public List<Announcement> getAnnouncements() {
+        return announcements;
     }
 
-    public void setPrice(Double price) {
-        this.price = price;
+    public void setAnnouncements(List<Announcement> announcements) {
+        this.announcements = announcements;
     }
 }

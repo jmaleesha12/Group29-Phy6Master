@@ -89,7 +89,6 @@ public class AuthService {
             throw new IllegalArgumentException("Username already exists");
         });
 
-        // Create User
         User user = new User();
         user.setName(request.getName());
         user.setUsername(request.getUsername());
@@ -101,7 +100,6 @@ public class AuthService {
 
         User savedUser = userRepository.save(user);
 
-        // Create Student Profile
         Student student = new Student();
         student.setUser(savedUser);
         student.setStudentId("STU-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
@@ -135,7 +133,6 @@ public class AuthService {
             throw new IllegalArgumentException("Username already exists");
         });
 
-        // Create User
         User user = new User();
         user.setName(request.getName());
         user.setUsername(request.getUsername());
@@ -147,7 +144,6 @@ public class AuthService {
 
         User savedUser = userRepository.save(user);
 
-        // Create Teacher Profile
         Teacher teacher = new Teacher();
         teacher.setUser(savedUser);
         teacher.setEmployeeId("EMP-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
@@ -222,7 +218,6 @@ public class AuthService {
             throw new IllegalArgumentException("Username already exists");
         });
 
-        // Create User
         User user = new User();
         user.setName(request.getName());
         user.setUsername(request.getUsername());
@@ -234,7 +229,6 @@ public class AuthService {
 
         User savedUser = userRepository.save(user);
 
-        // Create Tutor Profile
         Tutor tutor = new Tutor();
         tutor.setUser(savedUser);
         tutor.setTutorId("TUT-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
@@ -268,7 +262,6 @@ public class AuthService {
             throw new IllegalArgumentException("Username already exists");
         });
 
-        // Create User
         User user = new User();
         user.setName(request.getName());
         user.setUsername(request.getUsername());
@@ -280,7 +273,6 @@ public class AuthService {
 
         User savedUser = userRepository.save(user);
 
-        // Create Accountant Profile
         Accountant accountant = new Accountant();
         accountant.setUser(savedUser);
         accountant.setAccountantId("ACC-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
@@ -306,4 +298,4 @@ public class AuthService {
                 "Accountant account created successfully"
         );
     }
-    }
+}
