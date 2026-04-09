@@ -26,6 +26,9 @@ import Timetable from "./pages/teacher/Timetable";
 import Announcements from "./pages/teacher/Announcements";
 import TeacherLayout from "./components/TeacherLayout";
 import NotFound from "./pages/NotFound";
+import TuteManagementLayout from "./components/TuteManagementLayout";
+import TuteManagementDashboard from "./pages/tute-management/Dashboard";
+import IncomingRequests from "./pages/tute-management/IncomingRequests";
 import PaymentPage from "./pages/student/PaymentPage";
 import NotificationsPage from "./pages/student/NotificationsPage";
 import AccountantLayout from "./components/AccountantLayout";
@@ -76,6 +79,11 @@ const App = () => {
               <Route path="quizzes" element={<QuizGame />} />
               <Route path="schedule" element={<Schedule />} />
               <Route path="settings" element={<SettingsPage />} />
+            </Route>
+            <Route path="/tute-management" element={<TuteManagementLayout />}>
+              <Route index element={<Navigate to="dashboard" replace />} />
+              <Route path="dashboard" element={<TuteManagementDashboard />} />
+              <Route path="incoming" element={<IncomingRequests />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
