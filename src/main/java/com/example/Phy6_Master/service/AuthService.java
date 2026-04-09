@@ -2,10 +2,12 @@ package com.example.Phy6_Master.service;
 
 import com.example.Phy6_Master.dto.*;
 import com.example.Phy6_Master.model.User;
+import com.example.Phy6_Master.model.PasswordResetToken;
 import com.example.Phy6_Master.model.Student;
 import com.example.Phy6_Master.model.Teacher;
 import com.example.Phy6_Master.model.Tutor;
 import com.example.Phy6_Master.model.Accountant;
+import com.example.Phy6_Master.repository.PasswordResetTokenRepository;
 import com.example.Phy6_Master.repository.UserRepository;
 import com.example.Phy6_Master.repository.StudentRepository;
 import com.example.Phy6_Master.repository.TeacherRepository;
@@ -13,6 +15,8 @@ import com.example.Phy6_Master.repository.TutorRepository;
 import com.example.Phy6_Master.repository.AccountantRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -23,17 +27,72 @@ public class AuthService {
     private final TeacherRepository teacherRepository;
     private final TutorRepository tutorRepository;
     private final AccountantRepository accountantRepository;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final PasswordEncoder passwordEncoder;
 
     public AuthService(UserRepository userRepository, StudentRepository studentRepository,
                        TeacherRepository teacherRepository, TutorRepository tutorRepository,
-                       AccountantRepository accountantRepository, PasswordEncoder passwordEncoder) {
+                       AccountantRepository accountantRepository,
+                       PasswordResetTokenRepository passwordResetTokenRepository,
+                       PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.studentRepository = studentRepository;
         this.teacherRepository = teacherRepository;
         this.tutorRepository = tutorRepository;
         this.accountantRepository = accountantRepository;
+        this.passwordResetTokenRepository = passwordResetTokenRepository;
         this.passwordEncoder = passwordEncoder;
+    }
+
+    public ForgotPasswordResponse requestPasswordReset(ForgotPasswordRequest request) {
+        User user = userRepository.findByUsername(request.getIdentifier())
+                .or(() -> userRepository.findByEmail(request.getIdentifier()))
+                .orElse(null);
+
+        if (user == null) {
+            return new ForgotPasswordResponse(
+                    "If an account exists for this identifier, a reset token has been generated.",
+                    null,
+                    null
+            );
+        }
+
+        List<PasswordResetToken> activeTokens = passwordResetTokenRepository.findByUserAndUsedFalse(user);
+        for (PasswordResetToken activeToken : activeTokens) {
+            activeToken.setUsed(true);
+        }
+        if (!activeTokens.isEmpty()) {
+            passwordResetTokenRepository.saveAll(activeTokens);
+        }
+
+        PasswordResetToken token = new PasswordResetToken();
+        token.setUser(user);
+        token.setToken(UUID.randomUUID().toString());
+        token.setCreatedAt(LocalDateTime.now());
+        token.setExpiresAt(LocalDateTime.now().plusMinutes(15));
+        token.setUsed(false);
+        passwordResetTokenRepository.save(token);
+
+        return new ForgotPasswordResponse(
+                "Password reset token generated. Use it to reset your password.",
+                token.getToken(),
+                15
+        );
+    }
+
+    public String resetPassword(ResetPasswordRequest request) {
+        PasswordResetToken token = passwordResetTokenRepository
+                .findByTokenAndUsedFalseAndExpiresAtAfter(request.getToken(), LocalDateTime.now())
+                .orElseThrow(() -> new IllegalArgumentException("Invalid or expired reset token"));
+
+        User user = token.getUser();
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+
+        token.setUsed(true);
+        passwordResetTokenRepository.save(token);
+
+        return "Password reset successful";
     }
 
     public AuthResponse signIn(AuthSignInRequest request) {
@@ -188,36 +247,12 @@ public class AuthService {
         });
     }
 
-    public void ensureDefaultAccountant() {
-        userRepository.findByUsername("acc2").orElseGet(() -> {
-            User acc = new User();
-            acc.setName("Default Accountant");
-            acc.setUsername("acc2");
-            acc.setPassword(passwordEncoder.encode("123456"));
-            acc.setEmail("ac2@gmail.com");
-            acc.setPhoneNumber("0771234567");
-            acc.setRole(User.Role.ACCOUNTANT);
-            acc.setIsActive(true);
-            User savedUser = userRepository.save(acc);
-
-            Accountant accountant = new Accountant();
-            accountant.setUser(savedUser);
-            accountant.setAccountantId("ACC-DEF");
-            accountant.setDepartment("Finance");
-            accountant.setDesignation("Senior Accountant");
-            accountant.setQualification("BSc Accounting");
-            accountant.setOfficeLocation("Main Office");
-            accountantRepository.save(accountant);
-
-            return savedUser;
-        });
-    }
-
     public TutorResponse signUpAsTutor(TutorSignUpRequest request) {
         userRepository.findByUsername(request.getUsername()).ifPresent(existing -> {
             throw new IllegalArgumentException("Username already exists");
         });
 
+        // Create User
         User user = new User();
         user.setName(request.getName());
         user.setUsername(request.getUsername());
@@ -229,6 +264,7 @@ public class AuthService {
 
         User savedUser = userRepository.save(user);
 
+        // Create Tutor Profile
         Tutor tutor = new Tutor();
         tutor.setUser(savedUser);
         tutor.setTutorId("TUT-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
@@ -262,6 +298,7 @@ public class AuthService {
             throw new IllegalArgumentException("Username already exists");
         });
 
+        // Create User
         User user = new User();
         user.setName(request.getName());
         user.setUsername(request.getUsername());
@@ -273,6 +310,7 @@ public class AuthService {
 
         User savedUser = userRepository.save(user);
 
+        // Create Accountant Profile
         Accountant accountant = new Accountant();
         accountant.setUser(savedUser);
         accountant.setAccountantId("ACC-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
@@ -298,4 +336,4 @@ public class AuthService {
                 "Accountant account created successfully"
         );
     }
-}
+    }

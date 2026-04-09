@@ -1,11 +1,10 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bell, Check, BookOpen, CalendarDays, Clock, ExternalLink, X, ChevronLeft, Lock } from "lucide-react";
+import { Bell, BookOpen, CalendarDays, Clock, ExternalLink, X, Trophy, Target, TrendingUp, TrendingDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useAnnouncementsForStudent, useTimetable, dayDisplayName, formatTime } from "@/lib/api";
+import { useAnnouncementsForStudent, useStudentCourses, useStudentDashboard, useTimetable, dayDisplayName, formatTime } from "@/lib/api";
 import type { TimetableSlot, Announcement } from "@/lib/api";
-import { useAllEnrollments } from "@/lib/api/students";
-import type { EnrollmentSummary } from "@/lib/api/students";
 
 
 
@@ -13,9 +12,11 @@ const card = "rounded-xl border border-border bg-card p-5 shadow-card";
 const fadeIn = { initial: { opacity: 0, y: 15 }, animate: { opacity: 1, y: 0 } };
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const userId = Number(localStorage.getItem("authUserId")) || undefined;
   const studentName = localStorage.getItem("authName") || "Student";
-  const { data: allEnrollments = [], isLoading: loadingEnrollments } = useAllEnrollments(userId);
+  const { data: courses = [], isLoading: loadingCourses } = useStudentCourses(userId);
+  const { data: progress, isLoading: loadingProgress } = useStudentDashboard(userId);
   const { data: timetable = [], isLoading: loadingTimetable } = useTimetable();
   const { data: announcements = [], isLoading: loadingAnnouncements } = useAnnouncementsForStudent(userId);
 
@@ -27,7 +28,7 @@ export default function Dashboard() {
   const todayEnum = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"][new Date().getDay()];
 
   // Filter timetable to courses the student is enrolled in
-  const enrolledCourseIds = new Set(allEnrollments.filter((e: EnrollmentSummary) => e.status === 'ACTIVE' || e.status === 'APPROVED' || e.status === 'PENDING' || e.status === 'PAYMENT_SUBMITTED').map((e: EnrollmentSummary) => e.courseId));
+  const enrolledCourseIds = new Set(courses.map((c) => c.id));
   const todaySlots = timetable
     .filter((s) => s.dayOfWeek === todayEnum && enrolledCourseIds.has(s.course?.id))
     .sort((a, b) => a.startTime.localeCompare(b.startTime));
@@ -96,57 +97,118 @@ export default function Dashboard() {
         Welcome back, {studentName}!
       </motion.h1>
 
+      <motion.div {...fadeIn} transition={{ delay: 0.05 }} className={card}>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-display font-semibold text-foreground">Quiz Progress Overview</h2>
+          {progress && progress.totalQuizzes > 0 && (
+            <Button variant="outline" size="sm" onClick={() => navigate("/student/quizzes")}>Start New Quiz</Button>
+          )}
+        </div>
+
+        {loadingProgress ? (
+          <p className="text-sm text-muted-foreground">Loading progress...</p>
+        ) : !progress || progress.totalQuizzes === 0 ? (
+          <div className="rounded-lg border border-dashed border-border p-6 text-center">
+            <p className="text-sm text-muted-foreground">You haven’t completed any quizzes yet. Start a quiz to see your progress.</p>
+            <Button className="mt-3 gradient-cta text-primary-foreground" onClick={() => navigate("/student/quizzes")}>Start Quiz</Button>
+          </div>
+        ) : (
+          <div className="space-y-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="rounded-lg bg-secondary p-3">
+                <p className="text-xs text-muted-foreground">Total Quizzes</p>
+                <p className="text-xl font-semibold text-foreground flex items-center gap-2"><Trophy className="h-4 w-4 text-primary" />{progress.totalQuizzes}</p>
+              </div>
+              <div className="rounded-lg bg-secondary p-3">
+                <p className="text-xs text-muted-foreground">Average Score</p>
+                <p className="text-xl font-semibold text-foreground flex items-center gap-2"><Target className="h-4 w-4 text-primary" />{Math.round(progress.averageScore)}%</p>
+              </div>
+              <div className="rounded-lg bg-secondary p-3">
+                <p className="text-xs text-muted-foreground">Highest Score</p>
+                <p className="text-xl font-semibold text-foreground flex items-center gap-2"><TrendingUp className="h-4 w-4 text-green-500" />{Math.round(progress.highestScore)}%</p>
+              </div>
+              <div className="rounded-lg bg-secondary p-3">
+                <p className="text-xs text-muted-foreground">Lowest Score</p>
+                <p className="text-xl font-semibold text-foreground flex items-center gap-2"><TrendingDown className="h-4 w-4 text-amber-500" />{Math.round(progress.lowestScore)}%</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="rounded-lg border border-border p-3">
+                <h3 className="text-sm font-semibold text-foreground mb-2">Strengths</h3>
+                {progress.strengths.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">No strength insights yet.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {progress.strengths.slice(0, 5).map((item, index) => (
+                      <div key={`${item.label}-${index}`} className="flex items-center justify-between text-xs bg-secondary p-2 rounded">
+                        <span className="text-foreground truncate pr-2">{item.label}</span>
+                        <span className="text-green-500 font-medium">{Math.round(item.accuracyPercentage)}%</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="rounded-lg border border-border p-3">
+                <h3 className="text-sm font-semibold text-foreground mb-2">Areas for Improvement</h3>
+                {progress.weaknesses.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">No weakness insights yet.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {progress.weaknesses.slice(0, 5).map((item, index) => (
+                      <div key={`${item.label}-${index}`} className="flex items-center justify-between text-xs bg-secondary p-2 rounded">
+                        <span className="text-foreground truncate pr-2">{item.label}</span>
+                        <span className="text-amber-500 font-medium">{Math.round(item.accuracyPercentage)}%</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-semibold text-foreground mb-2">Recent Quiz Attempts</h3>
+              <div className="space-y-2">
+                {progress.recentAttempts.slice(0, 8).map((attempt, index) => (
+                  <div key={`${attempt.quizId}-${attempt.attemptedAt}-${index}`} className="rounded-lg bg-secondary p-3 text-xs flex items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{attempt.quizTitle}</p>
+                      <p className="text-muted-foreground">{new Date(attempt.attemptedAt).toLocaleString()}</p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-foreground font-semibold">{attempt.correctAnswers}/{attempt.totalQuestions} ({Math.round(attempt.scorePercentage)}%)</p>
+                      <p className={attempt.status === "PASS" ? "text-green-500" : "text-destructive"}>{attempt.status}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </motion.div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Enrolled Courses */}
         <motion.div {...fadeIn} transition={{ delay: 0.1 }} className={`${card} lg:col-span-2`}>
           <div className="flex items-center gap-2 mb-4">
             <BookOpen className="h-5 w-5 text-primary" />
-            <h2 className="font-display font-semibold text-foreground">My Enrollments</h2>
+            <h2 className="font-display font-semibold text-foreground">My Courses</h2>
           </div>
-
-          {loadingEnrollments ? (
+          {loadingCourses ? (
             <p className="text-sm text-muted-foreground">Loading...</p>
-          ) : allEnrollments.length === 0 ? (
-            <div className="flex flex-col items-center justify-center p-8 bg-secondary/50 rounded-lg border border-border">
-              <BookOpen className="h-10 w-10 text-muted-foreground mb-3 opacity-50" />
-              <p className="text-sm text-foreground font-medium">You have not enrolled in any classes yet.</p>
-              <p className="text-xs text-muted-foreground mt-1 mb-4">Browse available classes to get started.</p>
-              <Button onClick={() => window.location.href='/student/classes'} variant="outline" size="sm">Browse Classes</Button>
-            </div>
+          ) : courses.length === 0 ? (
+            <p className="text-sm text-muted-foreground">You are not enrolled in any courses yet.</p>
           ) : (
             <div className="space-y-3">
-              {allEnrollments.map((e: EnrollmentSummary) => {
-                const isPending = e.status === "PENDING";
-                const isRejected = e.status === "REJECTED";
-                const isActive = e.status === "ACTIVE" || e.status === "APPROVED";
-                const isSubmitted = e.status === "PAYMENT_SUBMITTED";
-                
-                return (
-                  <div key={e.id} className={`flex items-center justify-between p-3 rounded-lg border ${isPending ? 'border-yellow-500/30 bg-yellow-500/10' : isSubmitted ? 'border-blue-500/30 bg-blue-500/10' : isActive ? 'border-green-500/30 bg-green-500/10' : 'bg-secondary border-border'}`}>
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <p className={`font-medium text-sm ${isPending ? 'text-yellow-600 dark:text-yellow-400' : isSubmitted ? 'text-blue-600 dark:text-blue-400' : isActive ? 'text-green-600 dark:text-green-400' : 'text-foreground'}`}>
-                          {e.courseName}
-                        </p>
-                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-sm ${
-                          isPending ? 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400' : 
-                          isSubmitted ? 'bg-blue-500/20 text-blue-600 dark:text-blue-400' : 
-                          isActive ? 'bg-green-500/20 text-green-600 dark:text-green-400' : 
-                          'bg-red-500/20 text-red-600 dark:text-red-400'
-                        }`}>
-                          {e.status === 'PAYMENT_SUBMITTED' ? 'VERIFYING' : e.status}
-                        </span>
-                      </div>
-                      <p className={`text-xs ${isPending ? 'text-yellow-600/80 dark:text-yellow-400/80' : isSubmitted ? 'text-blue-600/80 dark:text-blue-400/80' : 'text-muted-foreground'}`}>
-                        {e.message || `Enrolled on ${new Date(e.enrollmentDate).toLocaleDateString()}`}
-                      </p>
-                    </div>
-                    {isPending && <Lock className="h-4 w-4 text-yellow-500 opacity-70" />}
-                    {isSubmitted && <Clock className="h-4 w-4 text-blue-500 opacity-70" />}
-                    {isActive && <Check className="h-4 w-4 text-green-500 opacity-70" />}
+              {courses.map((c) => (
+                <div key={c.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary">
+                  <div>
+                    <p className="font-medium text-sm text-foreground">{c.title}</p>
+                    <p className="text-xs text-muted-foreground">{c.subject || "Physics"} · {c.batch || "–"}</p>
                   </div>
-                );
-              })}
+                </div>
+              ))}
             </div>
           )}
         </motion.div>
@@ -163,47 +225,28 @@ export default function Dashboard() {
             <p className="text-sm text-muted-foreground">No classes scheduled for today.</p>
           ) : (
             <div className="space-y-2">
-              {todaySlots.map((slot) => {
-                const isPending = allEnrollments.some((p: EnrollmentSummary) => p.courseId === slot.course?.id && p.status === 'PENDING');
-                const isSubmitted = allEnrollments.some((p: EnrollmentSummary) => p.courseId === slot.course?.id && p.status === 'PAYMENT_SUBMITTED');
-                return (
-                  <div key={slot.id} className="p-3 rounded-lg bg-secondary">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <p className="font-medium text-sm text-foreground">{slot.course?.title}</p>
-                        {isPending && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-sm bg-yellow-500/20 text-yellow-600 dark:text-yellow-400">PENDING PAY</span>}
-                        {isSubmitted && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-sm bg-blue-500/20 text-blue-600 dark:text-blue-400">VERIFYING</span>}
-                      </div>
-                      {isLive(slot) && !isPending && !isSubmitted && (
-                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-red-500">
-                          <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" /> LIVE
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                      <Clock className="h-3 w-3" /> {formatTime(slot.startTime)} – {formatTime(slot.endTime)}
-                    </p>
-                    {slot.location && <p className="text-xs text-muted-foreground">{slot.location}</p>}
-                    
-                    {isPending ? (
-                       <Button size="sm" variant="outline" className="mt-2 w-full text-xs text-yellow-600 bg-yellow-50 dark:bg-yellow-900 border-yellow-200" disabled>
-                         <Lock className="h-3.5 w-3.5 mr-1" /> Pending Payment
-                       </Button>
-                    ) : isSubmitted ? (
-                       <Button size="sm" variant="outline" className="mt-2 w-full text-xs text-blue-600 bg-blue-50 dark:bg-blue-900 border-blue-200" disabled>
-                         <Clock className="h-3.5 w-3.5 mr-1" /> Verifying Payment
-                       </Button>
-                    ) : (
-                      isJoinable(slot) && slot.meetingLink && (
-                        <Button size="sm" className="mt-2 gap-1.5 gradient-cta text-primary-foreground w-full"
-                          onClick={() => window.open(slot.meetingLink, "_blank")}>
-                          <ExternalLink className="h-3.5 w-3.5" /> Join Now
-                        </Button>
-                      )
+              {todaySlots.map((slot) => (
+                <div key={slot.id} className="p-3 rounded-lg bg-secondary">
+                  <div className="flex items-center justify-between">
+                    <p className="font-medium text-sm text-foreground">{slot.course?.title}</p>
+                    {isLive(slot) && (
+                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-red-500">
+                        <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" /> LIVE
+                      </span>
                     )}
                   </div>
-                );
-              })}
+                  <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                    <Clock className="h-3 w-3" /> {formatTime(slot.startTime)} – {formatTime(slot.endTime)}
+                  </p>
+                  {slot.location && <p className="text-xs text-muted-foreground">{slot.location}</p>}
+                  {isJoinable(slot) && slot.meetingLink && (
+                    <Button size="sm" className="mt-2 gap-1.5 gradient-cta text-primary-foreground w-full"
+                      onClick={() => window.open(slot.meetingLink, "_blank")}>
+                      <ExternalLink className="h-3.5 w-3.5" /> Join Now
+                    </Button>
+                  )}
+                </div>
+              ))}
             </div>
           )}
         </motion.div>

@@ -9,17 +9,18 @@ import Classes from "./pages/Classes";
 import About from "./pages/About";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
+import ForgotPassword from "./pages/ForgotPassword";
 import StudentLayout from "./components/StudentLayout";
 import Dashboard from "./pages/student/Dashboard";
 import Resources from "./pages/student/Resources";
 import StudentClasses from "./pages/student/Classes";
 import Schedule from "./pages/student/Schedule";
 import SettingsPage from "./pages/student/Settings";
+import QuizGame from "./pages/student/QuizGame";
 import TeacherDashboard from "./pages/teacher/Dashboard";
-import MyCourses from "./pages/student/MyCourses";
-import CourseDetails from "./pages/student/CourseDetails";
 import Students from "./pages/teacher/Students";
 import ClassManagement from "./pages/teacher/ClassManagement";
+import TeacherQuizzes from "./pages/teacher/Quizzes";
 import ContentUpload from "./pages/teacher/ContentUpload";
 import Timetable from "./pages/teacher/Timetable";
 import Announcements from "./pages/teacher/Announcements";
@@ -57,10 +58,12 @@ const App = () => {
             <Route path="/classes" element={<Classes />} />
             <Route path="/signin" element={<SignIn />} />
             <Route path="/signup" element={<SignUp />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/teacher" element={<TeacherLayout />}>
               <Route path="dashboard" element={<TeacherDashboard />} />
               <Route path="students" element={<Students />} />
               <Route path="classes" element={<ClassManagement />} />
+              <Route path="quizzes" element={<TeacherQuizzes />} />
               <Route path="content" element={<ContentUpload />} />
               <Route path="timetable" element={<Timetable />} />
               <Route path="announcements" element={<Announcements />} />
@@ -70,20 +73,7 @@ const App = () => {
               <Route index element={<Navigate to="dashboard" replace />} />
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="classes" element={<StudentClasses />} />
-              <Route path="classes/:classId/payment" element={<PaymentPage />} />
-              <Route path="notifications" element={<NotificationsPage />} />
-              <Route path="schedule" element={<Schedule />} />
-              <Route path="settings" element={<SettingsPage />} />
-            </Route>
-            <Route path="/accountant" element={<AccountantLayout />}>
-              <Route index element={<Navigate to="payments" replace />} />
-              <Route path="payments" element={<PendingPaymentsList />} />
-              <Route path="payments/:paymentId" element={<PaymentVerificationDetail />} />
-            </Route>
-              <Route path="resources" element={<Resources />} />
-              <Route path="classes" element={<StudentClasses />} />
-              <Route path="courses" element={<MyCourses />} />
-              <Route path="courses/:courseId" element={<CourseDetails />} />
+              <Route path="quizzes" element={<QuizGame />} />
               <Route path="schedule" element={<Schedule />} />
               <Route path="settings" element={<SettingsPage />} />
             </Route>
