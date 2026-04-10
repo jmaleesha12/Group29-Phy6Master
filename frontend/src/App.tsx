@@ -69,8 +69,11 @@ const App = () => {
             <Route path="/student" element={<StudentLayout />}>
               <Route index element={<Navigate to="dashboard" replace />} />
               <Route path="dashboard" element={<Dashboard />} />
+              <Route path="resources" element={<Resources />} />
               <Route path="classes" element={<StudentClasses />} />
               <Route path="classes/:classId/payment" element={<PaymentPage />} />
+              <Route path="courses" element={<MyCourses />} />
+              <Route path="courses/:courseId" element={<CourseDetails />} />
               <Route path="notifications" element={<NotificationsPage />} />
               <Route path="schedule" element={<Schedule />} />
               <Route path="settings" element={<SettingsPage />} />
@@ -79,13 +82,6 @@ const App = () => {
               <Route index element={<Navigate to="payments" replace />} />
               <Route path="payments" element={<PendingPaymentsList />} />
               <Route path="payments/:paymentId" element={<PaymentVerificationDetail />} />
-            </Route>
-              <Route path="resources" element={<Resources />} />
-              <Route path="classes" element={<StudentClasses />} />
-              <Route path="courses" element={<MyCourses />} />
-              <Route path="courses/:courseId" element={<CourseDetails />} />
-              <Route path="schedule" element={<Schedule />} />
-              <Route path="settings" element={<SettingsPage />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

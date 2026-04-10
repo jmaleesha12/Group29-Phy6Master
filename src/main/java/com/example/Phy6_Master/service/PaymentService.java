@@ -81,7 +81,7 @@ public class PaymentService {
         Payment payment = existingPendingPayment.orElseGet(Payment::new);
         payment.setEnrollment(enrollment);
         payment.setAmount(amount);
-        payment.setPaymentMethod("BANK_SLIP");
+        payment.setPaymentMethod("BANK_SLIP_UPLOAD");
         payment.setStatus("SUBMITTED");
         payment.setFilePath(filePath);
         payment.setReferenceNumber(null);
@@ -103,9 +103,11 @@ public class PaymentService {
                 .orElseThrow(() -> new IllegalArgumentException("Payment not found"));
 
         payment.setStatus("APPROVED");
+        payment.setVerifiedAt(LocalDateTime.now());
+        
         Enrollment enrollment = payment.getEnrollment();
         if (enrollment != null) {
-            enrollment.setStatus("APPROVED");
+            enrollment.setStatus("ACTIVE"); // Change from APPROVED to ACTIVE for consistency
             if (enrollment.getStudent() != null) {
                 notificationService.createPaymentNotification(
                         enrollment.getStudent(),
@@ -123,6 +125,7 @@ public class PaymentService {
                 .orElseThrow(() -> new IllegalArgumentException("Payment not found"));
 
         payment.setStatus("REJECTED");
+        
         Enrollment enrollment = payment.getEnrollment();
         if (enrollment != null) {
             enrollment.setStatus("REJECTED");
