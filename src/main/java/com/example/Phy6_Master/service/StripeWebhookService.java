@@ -1,11 +1,13 @@
 package com.example.Phy6_Master.service;
 
 import com.stripe.exception.SignatureVerificationException;
+import com.stripe.model.Charge;
 import com.stripe.model.Event;
 import com.stripe.model.checkout.Session;
 import com.stripe.net.Webhook;
 import com.example.Phy6_Master.model.Enrollment;
 import com.example.Phy6_Master.model.Payment;
+import com.example.Phy6_Master.repository.EnrollmentRepository;
 import com.example.Phy6_Master.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,6 +28,7 @@ import java.util.Optional;
 public class StripeWebhookService {
     
     private final PaymentRepository paymentRepository;
+    private final EnrollmentRepository enrollmentRepository;
     private final NotificationService notificationService;
     private final ObjectMapper objectMapper;
 
@@ -47,6 +50,9 @@ public class StripeWebhookService {
             // 2. Process based on event type
             if ("checkout.session.completed".equals(event.getType())) {
                 return handleCheckoutSessionCompleted(event);
+            }
+            if ("charge.refunded".equals(event.getType())) {
+                return handleChargeRefunded(event);
             }
             
             // Log unhandled event types
@@ -106,10 +112,11 @@ public class StripeWebhookService {
             payment.setStripeWebhookProcessed(true);
             payment.setVerifiedAt(LocalDateTime.now());
 
-            // 4. Keep enrollment as PAYMENT_SUBMITTED — accountant will activate it when generating receipt
+            // 4. Keep enrollment non-active until official receipt is issued (generateReceipt activates it)
             Enrollment enrollment = payment.getEnrollment();
-            if (!"ACTIVE".equals(enrollment.getStatus())) {
+            if (enrollment != null && !"ACTIVE".equals(enrollment.getStatus())) {
                 enrollment.setStatus("PAYMENT_SUBMITTED");
+                enrollmentRepository.save(enrollment);
             }
 
             // 5. Save payment
@@ -120,6 +127,62 @@ public class StripeWebhookService {
             
         } catch (Exception e) {
             System.err.println("Error handling checkout.session.completed: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    /**
+     * Handle charge.refunded event from Stripe.
+     * Triggered when a previously captured charge is refunded (fully or partially).
+     */
+    @Transactional
+    public boolean handleChargeRefunded(Event event) {
+        try {
+            Charge charge = (Charge) event.getDataObjectDeserializer()
+                    .getObject()
+                    .orElseThrow(() -> new IllegalStateException("Failed to deserialize charge data"));
+
+            String paymentIntentId = charge.getPaymentIntent();
+            if (paymentIntentId == null) {
+                System.out.println("charge.refunded: no payment_intent on charge, skipping");
+                return true;
+            }
+
+            Optional<Payment> paymentOpt = paymentRepository.findByStripePaymentIntentId(paymentIntentId);
+            if (!paymentOpt.isPresent()) {
+                System.err.println("charge.refunded: no local payment found for intent " + paymentIntentId);
+                return true; // not our payment — ignore gracefully
+            }
+
+            Payment payment = paymentOpt.get();
+            payment.setStatus("REFUNDED");
+            paymentRepository.save(payment);
+
+            // Revoke enrollment so the student must re-enroll / re-pay
+            Enrollment enrollment = payment.getEnrollment();
+            if (enrollment != null) {
+                enrollment.setStatus("PENDING");
+                enrollmentRepository.save(enrollment);
+
+                // Notify student
+                if (enrollment.getStudent() != null) {
+                    String courseName = enrollment.getCourse() != null ? enrollment.getCourse().getTitle() : "your class";
+                    notificationService.createPaymentNotification(
+                            enrollment.getStudent(),
+                            payment,
+                            courseName,
+                            false,
+                            "Your Stripe payment has been refunded. Please re-submit payment if you wish to continue."
+                    );
+                }
+            }
+
+            System.out.println("Stripe webhook: payment " + payment.getId() + " marked REFUNDED.");
+            return true;
+
+        } catch (Exception e) {
+            System.err.println("Error handling charge.refunded: " + e.getMessage());
             e.printStackTrace();
             return false;
         }

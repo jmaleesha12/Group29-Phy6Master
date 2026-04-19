@@ -37,7 +37,7 @@ public class EnrollmentService {
         java.util.Optional<Enrollment> existingOpt = enrollmentRepository.findByStudentAndCourse(user, course);
         if (existingOpt.isPresent()) {
             Enrollment existing = existingOpt.get();
-            if ("APPROVED".equalsIgnoreCase(existing.getStatus())) {
+            if ("APPROVED".equalsIgnoreCase(existing.getStatus()) || "ACTIVE".equalsIgnoreCase(existing.getStatus())) {
                 throw new IllegalStateException("Student is already enrolled in this class");
             }
             return existing;
