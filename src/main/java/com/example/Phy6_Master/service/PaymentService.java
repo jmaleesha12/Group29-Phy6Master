@@ -1,8 +1,11 @@
 package com.example.Phy6_Master.service;
 
 import com.example.Phy6_Master.dto.ATMTransferRequest;
+import com.example.Phy6_Master.model.Course;
 import com.example.Phy6_Master.model.Enrollment;
 import com.example.Phy6_Master.model.Payment;
+import com.example.Phy6_Master.model.User;
+import com.example.Phy6_Master.repository.EnrollmentRepository;
 import com.example.Phy6_Master.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,6 +21,7 @@ import java.util.Optional;
 public class PaymentService {
 
     private final PaymentRepository paymentRepository;
+    private final EnrollmentRepository enrollmentRepository;
     private final EnrollmentService enrollmentService;
     private final FileStorageService fileStorageService;
     private final NotificationService notificationService;
@@ -38,6 +42,7 @@ public class PaymentService {
 
         // Set status to PAYMENT_SUBMITTED indicating payment is undergoing verification
         enrollment.setStatus("PAYMENT_SUBMITTED");
+        enrollmentRepository.save(enrollment); // explicit save so status is persisted before payment
 
         // Reuse the same payment row for this enrollment when it already exists
         // (schema may enforce unique enrollment_id in payments).
@@ -51,6 +56,9 @@ public class PaymentService {
         payment.setRejectionReason(null);
         payment.setVerifiedAt(null);
         payment.setVerifiedBy(null);
+        payment.setReceiptNumber(null);
+        payment.setReceiptGeneratedAt(null);
+        payment.setReceiptFilePath(null);
         payment.setPaymentDate(LocalDateTime.now());
 
         return paymentRepository.save(payment);
@@ -72,6 +80,7 @@ public class PaymentService {
 
         // Set status to PAYMENT_SUBMITTED indicating payment is undergoing verification
         enrollment.setStatus("PAYMENT_SUBMITTED");
+        enrollmentRepository.save(enrollment); // explicit save so status is persisted before payment
 
         // 2. Store the file locally
         String filePath = fileStorageService.storeFile(file);
@@ -81,13 +90,16 @@ public class PaymentService {
         Payment payment = existingPendingPayment.orElseGet(Payment::new);
         payment.setEnrollment(enrollment);
         payment.setAmount(amount);
-        payment.setPaymentMethod("BANK_SLIP");
+        payment.setPaymentMethod("BANK_SLIP_UPLOAD");
         payment.setStatus("SUBMITTED");
         payment.setFilePath(filePath);
         payment.setReferenceNumber(null);
         payment.setRejectionReason(null);
         payment.setVerifiedAt(null);
         payment.setVerifiedBy(null);
+        payment.setReceiptNumber(null);
+        payment.setReceiptGeneratedAt(null);
+        payment.setReceiptFilePath(null);
         payment.setPaymentDate(LocalDateTime.now());
 
         return paymentRepository.save(payment);
@@ -103,9 +115,11 @@ public class PaymentService {
                 .orElseThrow(() -> new IllegalArgumentException("Payment not found"));
 
         payment.setStatus("APPROVED");
+        payment.setVerifiedAt(LocalDateTime.now());
+        
         Enrollment enrollment = payment.getEnrollment();
         if (enrollment != null) {
-            enrollment.setStatus("APPROVED");
+            enrollment.setStatus("ACTIVE"); // Change from APPROVED to ACTIVE for consistency
             if (enrollment.getStudent() != null) {
                 notificationService.createPaymentNotification(
                         enrollment.getStudent(),
@@ -123,6 +137,7 @@ public class PaymentService {
                 .orElseThrow(() -> new IllegalArgumentException("Payment not found"));
 
         payment.setStatus("REJECTED");
+        
         Enrollment enrollment = payment.getEnrollment();
         if (enrollment != null) {
             enrollment.setStatus("REJECTED");
@@ -135,6 +150,47 @@ public class PaymentService {
             }
         }
         return paymentRepository.save(payment);
+    }
+
+    /**
+     * Student withdraws / cancels their own submitted (but not yet actioned) payment.
+     * Works for both manual (ATM/bank-slip) and Stripe abandoned sessions.
+     * Sets payment → CANCELLED, enrollment → PENDING so the student can re-submit.
+     */
+    @Transactional
+    public void withdrawPayment(Long studentId, Long courseId, String stripeSessionId) {
+        Payment payment;
+
+        if (stripeSessionId != null && !stripeSessionId.isBlank()) {
+            // Stripe cancel path: look up by session ID
+            payment = paymentRepository.findByStripeSessionId(stripeSessionId)
+                    .orElseThrow(() -> new IllegalArgumentException("No payment found for this Stripe session"));
+        } else {
+            // Manual path: find the latest SUBMITTED payment for this student + course
+            User student = new User();
+            student.setId(studentId);
+            Course course = new Course();
+            course.setId(courseId);
+
+            Enrollment enrollment = enrollmentRepository.findByStudentAndCourse(student, course)
+                    .orElseThrow(() -> new IllegalArgumentException("No enrollment found"));
+
+            payment = paymentRepository.findTopByEnrollmentOrderByPaymentDateDesc(enrollment)
+                    .orElseThrow(() -> new IllegalArgumentException("No pending payment found"));
+        }
+
+        if ("APPROVED".equals(payment.getStatus()) || "REJECTED".equals(payment.getStatus())) {
+            throw new IllegalStateException("This payment has already been actioned and cannot be withdrawn");
+        }
+
+        payment.setStatus("CANCELLED");
+        paymentRepository.save(payment);
+
+        Enrollment enrollment = payment.getEnrollment();
+        if (enrollment != null) {
+            enrollment.setStatus("PENDING");
+            enrollmentRepository.save(enrollment);
+        }
     }
 
     public java.util.List<com.example.Phy6_Master.dto.PaymentHistoryResponseDTO> getPaymentHistory(Long studentId) {
