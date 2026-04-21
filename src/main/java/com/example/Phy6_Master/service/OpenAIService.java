@@ -63,8 +63,8 @@ public class OpenAIService {
         messages.add(Map.of("role", "user", "content", userMessage.trim()));
 
         Map<String, Object> requestBody = Map.of(
-                "model", chatModel,
-                "messages", messages
+            "model", chatModel,
+            "messages", messages
         );
 
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
