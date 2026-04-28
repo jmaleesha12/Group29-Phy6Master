@@ -3,12 +3,14 @@ import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard, Calendar, BookOpen, User,
-  GraduationCap, LogOut, ChevronDown
+  GraduationCap, LogOut, ChevronDown, ClipboardCheck
 } from "lucide-react";
+import NotificationBell from "./NotificationBell";
 
 const sidebarLinks = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/student/dashboard" },
   { label: "Classes", icon: BookOpen, path: "/student/classes" },
+  { label: "Quizzes", icon: ClipboardCheck, path: "/student/quizzes" },
   { label: "Schedule", icon: Calendar, path: "/student/schedule" },
   { label: "Profile", icon: User, path: "/student/settings" },
 ];
@@ -21,6 +23,7 @@ export default function StudentLayout() {
 
   const userName = localStorage.getItem("authName") || "Student";
   const userInitial = userName.charAt(0).toUpperCase();
+  const userId = Number(localStorage.getItem("authUserId")) || undefined;
 
   useEffect(() => {
     if (localStorage.getItem("authRole") !== "STUDENT") {
@@ -75,6 +78,8 @@ export default function StudentLayout() {
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Notification Bell */}
+            <NotificationBell userId={userId} />
             {/* Profile */}
             <div className="relative">
               <button onClick={() => setProfileOpen(!profileOpen)}

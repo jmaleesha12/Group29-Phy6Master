@@ -16,7 +16,7 @@ public class StudentResponse {
     private String email;
     private String phoneNumber;
     private String school;
-    private String grade;
+    private String batch;
     private String address;
     private String parentName;
     private String parentPhoneNumber;

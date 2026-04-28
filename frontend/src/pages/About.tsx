@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Zap, Users, Target, Award, BookOpen, Globe } from "lucide-react";
+import { GraduationCap, Users, Target, Award, BookOpen, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import teacherPhoto from "@/assets/teacher-photo.jpeg";
 
@@ -24,7 +24,7 @@ export default function About() {
       {/* Nav */}
       <nav className="flex items-center justify-between px-6 py-4 max-w-7xl mx-auto">
         <Link to="/" className="flex items-center gap-2">
-          <Zap className="h-6 w-6 text-primary" />
+          <GraduationCap className="h-6 w-6 text-primary" />
           <span className="font-display text-lg font-bold text-foreground">Phy6 Master</span>
         </Link>
         <div className="hidden md:flex items-center gap-1">
@@ -138,7 +138,7 @@ export default function About() {
         <div className="max-w-7xl mx-auto px-6 py-12 grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <Zap className="h-5 w-5 text-primary" />
+              <GraduationCap className="h-5 w-5 text-primary" />
               <span className="font-display text-lg font-bold text-primary">Phy6 Master</span>
             </div>
             <p className="text-sm text-muted-foreground">Making quality education accessible and personalized for everyone, everywhere.</p>

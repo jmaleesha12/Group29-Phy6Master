@@ -1,5 +1,5 @@
 package com.example.Phy6_Master.repository;
-
+//
 import com.example.Phy6_Master.model.LearningMaterial;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -11,4 +11,5 @@ public interface LearningMaterialRepository extends JpaRepository<LearningMateri
 
     List<LearningMaterial> findByLesson(com.example.Phy6_Master.model.Lesson lesson);
 
+    List<LearningMaterial> findByLessonId(Long lessonId);
 }

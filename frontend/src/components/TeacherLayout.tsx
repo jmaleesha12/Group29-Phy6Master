@@ -2,16 +2,19 @@ import { useState, useEffect } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  LayoutDashboard, BookOpen, Upload, CalendarDays,
-  Menu, GraduationCap, LogOut, ChevronDown,
+  LayoutDashboard, Users, BookOpen, Upload, CalendarDays,
+  Menu, GraduationCap, LogOut, ChevronDown, Bell, FileQuestion,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const sidebarLinks = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/teacher/dashboard" },
+  { label: "Students", icon: Users, path: "/teacher/students" },
   { label: "Classes", icon: BookOpen, path: "/teacher/classes" },
+  { label: "Quizzes", icon: FileQuestion, path: "/teacher/quizzes" },
   { label: "Content", icon: Upload, path: "/teacher/content" },
   { label: "Timetable", icon: CalendarDays, path: "/teacher/timetable" },
+  { label: "Announcements", icon: Bell, path: "/teacher/announcements" },
 ];
 
 export default function TeacherLayout() {

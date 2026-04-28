@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Zap, User, Mail, Lock, ShieldCheck, Eye, EyeOff, ArrowRight } from "lucide-react";
+import { Zap, User, Mail, Lock, ShieldCheck, Eye, EyeOff, ArrowRight, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { signUp } from "@/lib/auth-api";
 
 export default function SignUp() {
-  const [form, setForm] = useState({ name: "", email: "", password: "", confirmPassword: "" });
+  const [form, setForm] = useState({ name: "", email: "", username: "", phoneNumber: "", password: "", confirmPassword: "" });
   const [showPw, setShowPw] = useState(false);
   const [agree, setAgree] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -19,14 +19,15 @@ export default function SignUp() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name || !form.email || !form.password || !form.confirmPassword) { toast.error("Please fill in all fields"); return; }
+    if (!form.name || !form.email || !form.username || !form.password || !form.confirmPassword) { toast.error("Please fill in all fields"); return; }
     if (form.password.length < 8) { toast.error("Password must be at least 8 characters"); return; }
     if (form.password !== form.confirmPassword) { toast.error("Passwords do not match"); return; }
+    if (form.phoneNumber && form.phoneNumber.length !== 10) { toast.error("Phone number must be 10 digits"); return; }
     if (!agree) { toast.error("Please agree to the terms"); return; }
 
     setIsSubmitting(true);
     try {
-      const response = await signUp(form.name.trim(), form.email.trim(), form.password);
+      const response = await signUp(form.name.trim(), form.email.trim(), form.username.trim(), form.phoneNumber.trim(), form.password);
 
       localStorage.setItem("authRole", response.role);
       localStorage.setItem("authName", response.name || "");
@@ -73,7 +74,18 @@ export default function SignUp() {
               <label className="text-sm font-medium text-foreground mb-1.5 block">Email Address</label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input value={form.email} onChange={set("email")} placeholder="name@example.com" className="pl-10 bg-secondary border-border" />
+                <Input value={form.email} onChange={set("email")} type="email" className="pl-10 bg-secondary border-border" />
+              </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1.5 block">Username</label>
+              <Input value={form.username} onChange={set("username")} className="bg-secondary border-border" />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1.5 block">Phone Number</label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input value={form.phoneNumber} onChange={(e) => { const v = e.target.value.replace(/\D/g, ""); if (v.length <= 10) setForm((f) => ({ ...f, phoneNumber: v })); }} placeholder="07X XXX XXXX" type="tel" className="pl-10 bg-secondary border-border" />
               </div>
             </div>
             <div>
@@ -105,13 +117,6 @@ export default function SignUp() {
             </Button>
           </form>
         </motion.div>
-
-        <p className="text-center text-sm text-muted-foreground mt-8">Start your learning journey with Phy6 Master today</p>
-      </div>
-
-      <footer className="border-t border-border py-6 text-center text-xs text-muted-foreground mt-auto">
-        © 2024 Phy6 Master Inc. All rights reserved. <span className="mx-2">|</span> Help Center <span className="mx-2">|</span> Contact Support
-      </footer>
     </div>
   );
 }

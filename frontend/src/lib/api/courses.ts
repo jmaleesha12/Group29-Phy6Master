@@ -20,7 +20,7 @@ export function useCourse(id: number | undefined) {
 export function useCreateCourse() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (course: Partial<Course>) => post<Course>("/api/courses", course),
+    mutationFn: (course: Partial<Course> & { teacherId?: number }) => post<Course>("/api/courses", course),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["courses"] }),
   });
 }

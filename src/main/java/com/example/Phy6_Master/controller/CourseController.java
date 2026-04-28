@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/courses")
@@ -20,8 +21,17 @@ public class CourseController {
     private EnrollmentRepository enrollmentRepository;
 
     @PostMapping
-    public Course createCourse(@RequestBody Course course) {
-        return courseService.createCourse(course);
+    public Course createCourse(@RequestBody Map<String, Object> request) {
+        Long teacherId = request.get("teacherId") != null ?
+            Long.valueOf(request.get("teacherId").toString()) : null;
+        String title = (String) request.get("title");
+        String description = (String) request.get("description");
+        String batch = (String) request.get("batch");
+        String subject = (String) request.get("subject");
+        String type = (String) request.get("type");
+        String imageUrl = (String) request.get("imageUrl");
+
+        return courseService.createCourse(teacherId, title, description, batch, subject, type, imageUrl);
     }
 
     @GetMapping
@@ -50,7 +60,7 @@ public class CourseController {
     public ResponseEntity<Void> deleteCourse(@PathVariable Long id) {
         try {
             courseService.deleteCourse(id);
-            return ResponseEntity.ok().build();
+            return ResponseEntity.noContent().build();
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }

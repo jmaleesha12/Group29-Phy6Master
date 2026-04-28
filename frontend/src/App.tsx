@@ -9,19 +9,40 @@ import Classes from "./pages/Classes";
 import About from "./pages/About";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
+import ForgotPassword from "./pages/ForgotPassword";
 import StudentLayout from "./components/StudentLayout";
 import Dashboard from "./pages/student/Dashboard";
+import Resources from "./pages/student/Resources";
 import StudentClasses from "./pages/student/Classes";
 import Schedule from "./pages/student/Schedule";
 import SettingsPage from "./pages/student/Settings";
+import QuizGame from "./pages/student/QuizGame";
 import TeacherDashboard from "./pages/teacher/Dashboard";
+import Students from "./pages/teacher/Students";
 import ClassManagement from "./pages/teacher/ClassManagement";
+import TeacherQuizzes from "./pages/teacher/Quizzes";
 import ContentUpload from "./pages/teacher/ContentUpload";
 import Timetable from "./pages/teacher/Timetable";
+import Announcements from "./pages/teacher/Announcements";
 import TeacherLayout from "./components/TeacherLayout";
 import NotFound from "./pages/NotFound";
+import PaymentPage from "./pages/student/PaymentPage";
+import NotificationsPage from "./pages/student/NotificationsPage";
+import AccountantLayout from "./components/AccountantLayout";
+import PendingPaymentsList from "./pages/accountant/PendingPaymentsList";
+import PaymentVerificationDetail from "./pages/accountant/PaymentVerificationDetail";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 0,                // data is immediately stale → refetch on every mount
+      gcTime: 0,                   // don't keep stale cache entries after unmount
+      refetchOnMount: "always",    // always refetch when component mounts (even if data exists)
+      refetchOnWindowFocus: true,  // refetch when user tabs back / focuses window
+      retry: 2,                    // retry failed requests twice before giving up
+    },
+  },
+});
 
 const App = () => {
   useTheme();
@@ -37,17 +58,22 @@ const App = () => {
             <Route path="/classes" element={<Classes />} />
             <Route path="/signin" element={<SignIn />} />
             <Route path="/signup" element={<SignUp />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/teacher" element={<TeacherLayout />}>
               <Route path="dashboard" element={<TeacherDashboard />} />
+              <Route path="students" element={<Students />} />
               <Route path="classes" element={<ClassManagement />} />
+              <Route path="quizzes" element={<TeacherQuizzes />} />
               <Route path="content" element={<ContentUpload />} />
               <Route path="timetable" element={<Timetable />} />
+              <Route path="announcements" element={<Announcements />} />
               <Route index element={<Navigate to="dashboard" replace />} />
             </Route>
             <Route path="/student" element={<StudentLayout />}>
               <Route index element={<Navigate to="dashboard" replace />} />
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="classes" element={<StudentClasses />} />
+              <Route path="quizzes" element={<QuizGame />} />
               <Route path="schedule" element={<Schedule />} />
               <Route path="settings" element={<SettingsPage />} />
             </Route>
