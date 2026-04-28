@@ -24,7 +24,6 @@ public class WebConfig implements WebMvcConfigurer {
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/api/**")
                 .allowedOrigins("http://localhost:5173", "http://127.0.0.1:5173",
-                        "http://localhost:5174", "http://127.0.0.1:5174",
                         "http://localhost:8080", "http://127.0.0.1:8080")
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
@@ -37,8 +36,8 @@ public class WebConfig implements WebMvcConfigurer {
         return new OncePerRequestFilter() {
             @Override
             protected void doFilterInternal(HttpServletRequest request,
-                    HttpServletResponse response,
-                    FilterChain filterChain) throws ServletException, IOException {
+                                            HttpServletResponse response,
+                                            FilterChain filterChain) throws ServletException, IOException {
                 if (request.getRequestURI().startsWith("/api/")) {
                     response.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
                     response.setHeader("Pragma", "no-cache");

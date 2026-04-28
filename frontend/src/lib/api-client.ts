@@ -14,15 +14,15 @@ async function handleResponse<T>(res: Response): Promise<T> {
     let message = `Request failed (${res.status})`;
     try {
       const text = await res.text();
+      // Try to parse as JSON first
       try {
         const json = JSON.parse(text);
         message = json.message || json.error || text;
       } catch {
+        // Plain text error from backend
         if (text) message = text;
       }
-    } catch {
-      // ignore
-    }
+    } catch { /* ignore */ }
     throw new ApiError(message, res.status);
   }
   if (res.status === 204) return undefined as unknown as T;
@@ -47,16 +47,6 @@ export async function post<T>(path: string, body?: unknown): Promise<T> {
 export async function put<T>(path: string, body?: unknown): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: body ? JSON.stringify(body) : undefined,
-    cache: "no-store",
-  });
-  return handleResponse<T>(res);
-}
-
-export async function patch<T>(path: string, body?: unknown): Promise<T> {
-  const res = await fetch(`${BASE_URL}${path}`, {
-    method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: body ? JSON.stringify(body) : undefined,
     cache: "no-store",

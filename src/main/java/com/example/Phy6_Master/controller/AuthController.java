@@ -1,13 +1,31 @@
 package com.example.Phy6_Master.controller;
 
-import com.example.Phy6_Master.dto.*;
-import com.example.Phy6_Master.service.AuthService;
-import jakarta.validation.Valid;
+import java.util.Map;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Map;
+import com.example.Phy6_Master.dto.AccountantResponse;
+import com.example.Phy6_Master.dto.AccountantSignUpRequest;
+import com.example.Phy6_Master.dto.AuthResponse;
+import com.example.Phy6_Master.dto.AuthSignInRequest;
+import com.example.Phy6_Master.dto.AuthSignUpRequest;
+import com.example.Phy6_Master.dto.ForgotPasswordRequest;
+import com.example.Phy6_Master.dto.ForgotPasswordResponse;
+import com.example.Phy6_Master.dto.ResetPasswordRequest;
+import com.example.Phy6_Master.dto.StudentResponse;
+import com.example.Phy6_Master.dto.StudentSignUpRequest;
+import com.example.Phy6_Master.dto.TeacherResponse;
+import com.example.Phy6_Master.dto.TeacherSignUpRequest;
+import com.example.Phy6_Master.dto.TutorResponse;
+import com.example.Phy6_Master.dto.TutorSignUpRequest;
+import com.example.Phy6_Master.service.AuthService;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -26,6 +44,23 @@ public class AuthController {
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException exception) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", exception.getMessage()));
+        }
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        ForgotPasswordResponse response = authService.requestPasswordReset(request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        try {
+            String message = authService.resetPassword(request);
+            return ResponseEntity.ok(Map.of("message", message));
+        } catch (IllegalArgumentException exception) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", exception.getMessage()));
         }
     }
@@ -68,6 +103,7 @@ public class AuthController {
                     .body(Map.of("message", "Error creating teacher account: " + exception.getMessage()));
         }
     }
+
     @PostMapping("/signup/tutor")
     public ResponseEntity<?> signUpTutor(@Valid @RequestBody TutorSignUpRequest request) {
         try {
