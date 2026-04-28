@@ -9,6 +9,8 @@ import com.example.Phy6_Master.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -18,27 +20,49 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AccountantPaymentService {
 
+    private static final Logger log = LoggerFactory.getLogger(AccountantPaymentService.class);
+
     private final PaymentRepository paymentRepository;
     private final NotificationService notificationService;
     private final UserRepository userRepository;
+    private final ReceiptService receiptService;
 
     public List<PaymentPendingListResponseDTO> getPendingPayments() {
+
+        // All SUBMITTED payments (ATM, Bank Slip, and Online/Stripe when webhook hasn't fired yet)
+        List<String> allPaymentMethods = java.util.Arrays.asList(
+                "ATM_TRANSFER", "BANK_SLIP_UPLOAD", "BANK_SLIP", "ONLINE_PAYMENT");
+        List<Payment> submittedPending = paymentRepository.findByStatusAndPaymentMethodInOrderByPaymentDateAsc(
+                "SUBMITTED", allPaymentMethods);
+
+        // Stripe payments confirmed by webhook (APPROVED) but no receipt yet — accountant issues receipt
+
         // Manual payments awaiting accountant approval
         List<String> manualPaymentMethods = java.util.Arrays.asList("ATM_TRANSFER", "BANK_SLIP_UPLOAD", "BANK_SLIP");
         List<Payment> manualPending = paymentRepository.findByStatusAndPaymentMethodInOrderByPaymentDateAsc(
                 "SUBMITTED", manualPaymentMethods);
 
         // Stripe payments that are APPROVED but have no receipt yet — accountant must generate receipt
+
         List<Payment> stripePending = paymentRepository.findByStatusAndPaymentMethodInOrderByPaymentDateAsc(
                 "APPROVED", java.util.Arrays.asList("ONLINE_PAYMENT"))
                 .stream()
                 .filter(p -> p.getReceiptNumber() == null || p.getReceiptNumber().trim().isEmpty())
                 .collect(Collectors.toList());
 
+
+        // Merge and sort globally by payment date ascending (oldest first per US-45)
+        List<Payment> combined = new java.util.ArrayList<>();
+        combined.addAll(submittedPending);
+        combined.addAll(stripePending);
+        combined.sort(java.util.Comparator.comparing(
+                p -> p.getPaymentDate() != null ? p.getPaymentDate() : java.time.LocalDateTime.MIN));
+
         // Merge both lists, manual first then Stripe
         List<Payment> combined = new java.util.ArrayList<>();
         combined.addAll(manualPending);
         combined.addAll(stripePending);
+
 
         return combined.stream()
                 .map(payment -> {
@@ -59,6 +83,7 @@ public class AccountantPaymentService {
                 }).collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public AccountantPaymentDetailResponseDTO getPaymentDetail(Long paymentId) {
         Payment payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new IllegalArgumentException("Payment not found"));
@@ -108,7 +133,11 @@ public class AccountantPaymentService {
 
         Enrollment enrollment = payment.getEnrollment();
         if (enrollment != null) {
+
+            enrollment.setStatus("ACTIVE");
+
             enrollment.setStatus("ACTIVE"); // Use ACTIVE for consistency
+
             if (enrollment.getStudent() != null) {
                 notificationService.createPaymentNotification(
                         enrollment.getStudent(),
@@ -118,6 +147,13 @@ public class AccountantPaymentService {
             }
         }
         paymentRepository.save(payment);
+
+        // Auto-generate receipt for all approved payments
+        try {
+            receiptService.generateReceipt(paymentId);
+        } catch (Exception e) {
+            log.warn("Could not auto-generate receipt for payment {}: {}", paymentId, e.getMessage());
+        }
     }
 
     @Transactional
@@ -151,7 +187,8 @@ public class AccountantPaymentService {
                         enrollment.getStudent(),
                         payment,
                         enrollment.getCourse() != null ? enrollment.getCourse().getTitle() : "Your Class",
-                        false);
+                        false,
+                        rejectionReason);
             }
         }
         paymentRepository.save(payment);

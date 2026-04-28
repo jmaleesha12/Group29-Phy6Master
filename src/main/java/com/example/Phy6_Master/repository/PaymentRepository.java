@@ -3,13 +3,25 @@ package com.example.Phy6_Master.repository;
 import com.example.Phy6_Master.model.Payment;
 import com.example.Phy6_Master.model.Enrollment;
 import com.example.Phy6_Master.model.User;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
 
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
     Optional<Payment> findTopByEnrollmentOrderByPaymentDateDesc(Enrollment enrollment);
+
+    /** Latest payment for a student (User id) + course title — used by tutor request payment status. */
+    @org.springframework.data.jpa.repository.Query(
+            "SELECT p FROM Payment p WHERE p.enrollment.student.id = :userId "
+                    + "AND LOWER(p.enrollment.course.title) = LOWER(:courseTitle) "
+                    + "ORDER BY p.paymentDate DESC")
+    List<Payment> findLatestPaymentsForStudentUserAndCourseTitle(
+            @Param("userId") Long userId,
+            @Param("courseTitle") String courseTitle,
+            Pageable pageable);
     
     // For accountant pending list (ONLY ATM and Bank Slip, ONLY SUBMITTED status)
     List<Payment> findByStatusAndPaymentMethodInOrderByPaymentDateAsc(
