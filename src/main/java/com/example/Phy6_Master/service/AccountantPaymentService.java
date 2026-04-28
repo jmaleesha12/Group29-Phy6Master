@@ -28,6 +28,7 @@ public class AccountantPaymentService {
     private final ReceiptService receiptService;
 
     public List<PaymentPendingListResponseDTO> getPendingPayments() {
+
         // All SUBMITTED payments (ATM, Bank Slip, and Online/Stripe when webhook hasn't fired yet)
         List<String> allPaymentMethods = java.util.Arrays.asList(
                 "ATM_TRANSFER", "BANK_SLIP_UPLOAD", "BANK_SLIP", "ONLINE_PAYMENT");
@@ -35,11 +36,20 @@ public class AccountantPaymentService {
                 "SUBMITTED", allPaymentMethods);
 
         // Stripe payments confirmed by webhook (APPROVED) but no receipt yet — accountant issues receipt
+
+        // Manual payments awaiting accountant approval
+        List<String> manualPaymentMethods = java.util.Arrays.asList("ATM_TRANSFER", "BANK_SLIP_UPLOAD", "BANK_SLIP");
+        List<Payment> manualPending = paymentRepository.findByStatusAndPaymentMethodInOrderByPaymentDateAsc(
+                "SUBMITTED", manualPaymentMethods);
+
+        // Stripe payments that are APPROVED but have no receipt yet — accountant must generate receipt
+
         List<Payment> stripePending = paymentRepository.findByStatusAndPaymentMethodInOrderByPaymentDateAsc(
                 "APPROVED", java.util.Arrays.asList("ONLINE_PAYMENT"))
                 .stream()
                 .filter(p -> p.getReceiptNumber() == null || p.getReceiptNumber().trim().isEmpty())
                 .collect(Collectors.toList());
+
 
         // Merge and sort globally by payment date ascending (oldest first per US-45)
         List<Payment> combined = new java.util.ArrayList<>();
@@ -47,6 +57,12 @@ public class AccountantPaymentService {
         combined.addAll(stripePending);
         combined.sort(java.util.Comparator.comparing(
                 p -> p.getPaymentDate() != null ? p.getPaymentDate() : java.time.LocalDateTime.MIN));
+
+        // Merge both lists, manual first then Stripe
+        List<Payment> combined = new java.util.ArrayList<>();
+        combined.addAll(manualPending);
+        combined.addAll(stripePending);
+
 
         return combined.stream()
                 .map(payment -> {
@@ -117,7 +133,11 @@ public class AccountantPaymentService {
 
         Enrollment enrollment = payment.getEnrollment();
         if (enrollment != null) {
+
             enrollment.setStatus("ACTIVE");
+
+            enrollment.setStatus("ACTIVE"); // Use ACTIVE for consistency
+
             if (enrollment.getStudent() != null) {
                 notificationService.createPaymentNotification(
                         enrollment.getStudent(),

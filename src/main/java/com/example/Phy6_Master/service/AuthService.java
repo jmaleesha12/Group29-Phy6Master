@@ -96,11 +96,21 @@ public class AuthService {
     }
 
     public AuthResponse signIn(AuthSignInRequest request) {
-        User user = userRepository.findByUsername(request.getUsername())
-                .orElseThrow(() -> new IllegalArgumentException("Invalid username or password"));
+        String login = request.getUsername();
+        User user = userRepository.findByUsername(login)
+                .orElseGet(() -> userRepository.findByEmail(login)
+                        .orElseThrow(() -> new IllegalArgumentException("Invalid username or password")));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new IllegalArgumentException("Invalid username or password");
+            // Fallback for legacy plaintext passwords: upgrade on successful match
+            if (user.getPassword() != null
+                    && !user.getPassword().startsWith("$2a$")
+                    && user.getPassword().equals(request.getPassword())) {
+                user.setPassword(passwordEncoder.encode(request.getPassword()));
+                userRepository.save(user);
+            } else {
+                throw new IllegalArgumentException("Invalid username or password");
+            }
         }
 
         return new AuthResponse(
