@@ -3,6 +3,10 @@ package com.example.Phy6_Master.model;
 import jakarta.persistence.*;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+
+
+import java.util.ArrayList;
+
 import java.util.List;
 import java.util.ArrayList;
 
@@ -33,6 +37,7 @@ public class Lesson {
     private List<LearningMaterial> learningMaterials = new ArrayList<>();
 
     public Lesson() {}
+
     public Lesson(Long id, String title, String content, Course course, String month) {
         this.id = id;
         this.title = title;
