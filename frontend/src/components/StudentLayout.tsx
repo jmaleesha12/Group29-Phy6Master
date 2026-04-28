@@ -12,6 +12,8 @@ const sidebarLinks = [
   { label: "Dashboard",     icon: LayoutDashboard, path: "/student/dashboard" },
   { label: "Classes",       icon: BookOpen,        path: "/student/classes" },
   { label: "Schedule",      icon: Calendar,        path: "/student/schedule" },
+  { label: "Payment notify", icon: Bell,            path: "/student/notifications" },
+  { label: "AI Chatbot",    icon: Bot,             path: "/student/chatbot" },
   { label: "Quizzes",       icon: ClipboardCheck,  path: "/student/quizzes" },
   { label: "Tute Requests", icon: FileText,        path: "/student/tute-requests" },
   { label: "Profile",       icon: User,            path: "/student/settings" },

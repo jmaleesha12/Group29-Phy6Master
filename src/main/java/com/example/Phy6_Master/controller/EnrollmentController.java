@@ -9,6 +9,7 @@ import com.example.Phy6_Master.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
 
@@ -56,6 +57,7 @@ public class EnrollmentController {
 
     /** Unenroll a student from a course. */
     @DeleteMapping
+    @Transactional
     public ResponseEntity<?> unenroll(@RequestParam Long userId, @RequestParam Long courseId) {
         User user = userRepository.findById(userId).orElse(null);
         Course course = courseRepository.findById(courseId).orElse(null);

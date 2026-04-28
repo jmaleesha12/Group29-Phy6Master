@@ -117,6 +117,7 @@ export default function SignUp() {
             </Button>
           </form>
         </motion.div>
+      </div>
     </div>
   );
 }

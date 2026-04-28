@@ -30,6 +30,7 @@ import TeacherLayout from "./components/TeacherLayout";
 import NotFound from "./pages/NotFound";
 import PaymentPage from "./pages/student/PaymentPage";
 import NotificationsPage from "./pages/student/NotificationsPage";
+import Chatbot from "./pages/student/Chatbot";
 import AccountantLayout from "./components/AccountantLayout";
 import PendingPaymentsList from "./pages/accountant/PendingPaymentsList";
 import PaymentVerificationDetail from "./pages/accountant/PaymentVerificationDetail";
@@ -56,61 +57,63 @@ const queryClient = new QueryClient({
 const App = () => {
   useTheme();
   return (
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Landing />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/classes" element={<Classes />} />
-              <Route path="/signin" element={<SignIn />} />
-              <Route path="/signup" element={<SignUp />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/teacher" element={<TeacherLayout />}>
-                <Route path="dashboard" element={<TeacherDashboard />} />
-                <Route path="students" element={<Students />} />
-                <Route path="classes" element={<ClassManagement />} />
-                <Route path="quizzes" element={<TeacherQuizzes />} />
-                <Route path="content" element={<ContentUpload />} />
-                <Route path="timetable" element={<Timetable />} />
-                <Route path="announcements" element={<Announcements />} />
-                <Route index element={<Navigate to="dashboard" replace />} />
-              </Route>
-              <Route path="/student" element={<StudentLayout />}>
-                <Route index element={<Navigate to="dashboard" replace />} />
-                <Route path="dashboard" element={<Dashboard />} />
-                <Route path="classes" element={<StudentClasses />} />
-                <Route path="tute-requests" element={<TuteRequests />} />
-                <Route path="classes/:classId/payment" element={<PaymentPage />} />
-                <Route path="quizzes" element={<QuizSelection />} />
-                <Route path="quizzes/:quizId" element={<QuizDetails />} />
-                <Route path="quizzes/:quizId/play" element={<QuizGame />} />
-                <Route path="notifications" element={<NotificationsPage />} />
-                <Route path="schedule" element={<Schedule />} />
-                <Route path="settings" element={<SettingsPage />} />
-              </Route>
-              <Route path="/accountant" element={<AccountantLayout />}>
-                <Route index element={<Navigate to="dashboard" replace />} />
-                <Route path="payments" element={<PendingPaymentsList />} />
-                <Route path="payments/:paymentId" element={<PaymentVerificationDetail />} />
-              </Route>
-              <Route path="/tute" element={<TuteManagerLayout />}>
-                <Route index element={<Navigate to="dashboard" replace />} />
-                <Route path="dashboard" element={<TuteDashboard />} />
-                <Route path="incoming-requests" element={<IncomingRequests />} />
-                <Route path="active-requests" element={<ActiveRequests />} />
-                <Route path="declined-requests" element={<DeclinedRequests />} />
-                <Route path="delivery-records" element={<DeliveryRecords />} />
-                <Route path="profile-settings" element={<TuteProfileSettings />} />
-              </Route>
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
-      </QueryClientProvider>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Landing />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/classes" element={<Classes />} />
+            <Route path="/signin" element={<SignIn />} />
+            <Route path="/signup" element={<SignUp />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/teacher" element={<TeacherLayout />}>
+              <Route path="dashboard" element={<TeacherDashboard />} />
+              <Route path="students" element={<Students />} />
+              <Route path="classes" element={<ClassManagement />} />
+              <Route path="quizzes" element={<TeacherQuizzes />} />
+              <Route path="content" element={<ContentUpload />} />
+              <Route path="timetable" element={<Timetable />} />
+              <Route path="announcements" element={<Announcements />} />
+              <Route index element={<Navigate to="dashboard" replace />} />
+            </Route>
+            <Route path="/student" element={<StudentLayout />}>
+              <Route index element={<Navigate to="dashboard" replace />} />
+              <Route path="dashboard" element={<Dashboard />} />
+              <Route path="classes" element={<StudentClasses />} />
+              <Route path="tute-requests" element={<TuteRequests />} />
+              <Route path="classes/:classId/payment" element={<PaymentPage />} />
+              <Route path="quizzes" element={<QuizSelection />} />
+              <Route path="quizzes/:quizId" element={<QuizDetails />} />
+              <Route path="quizzes/:quizId/play" element={<QuizGame />} />
+              <Route path="notifications" element={<NotificationsPage />} />
+              <Route path="chatbot" element={<Chatbot />} />
+              <Route path="schedule" element={<Schedule />} />
+              <Route path="settings" element={<SettingsPage />} />
+            </Route>
+            <Route path="/accountant" element={<AccountantLayout />}>
+              <Route index element={<Navigate to="dashboard" replace />} />
+              <Route path="payments" element={<PendingPaymentsList />} />
+              <Route path="payments/:paymentId" element={<PaymentVerificationDetail />} />
+            </Route>
+            <Route path="/tute" element={<TuteManagerLayout />}>
+              <Route index element={<Navigate to="dashboard" replace />} />
+              <Route path="dashboard" element={<TuteDashboard />} />
+              <Route path="incoming-requests" element={<IncomingRequests />} />
+              <Route path="active-requests" element={<ActiveRequests />} />
+              <Route path="declined-requests" element={<DeclinedRequests />} />
+              <Route path="delivery-records" element={<DeliveryRecords />} />
+              <Route path="profile-settings" element={<TuteProfileSettings />} />
+            </Route>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
   );
 };
 
 export default App;
+

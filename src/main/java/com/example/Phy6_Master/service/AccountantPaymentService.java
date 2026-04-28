@@ -23,8 +23,24 @@ public class AccountantPaymentService {
     private final UserRepository userRepository;
 
     public List<PaymentPendingListResponseDTO> getPendingPayments() {
-        return paymentRepository.findByStatusOrderByPaymentDateAsc("SUBMITTED")
+        // Manual payments awaiting accountant approval
+        List<String> manualPaymentMethods = java.util.Arrays.asList("ATM_TRANSFER", "BANK_SLIP_UPLOAD", "BANK_SLIP");
+        List<Payment> manualPending = paymentRepository.findByStatusAndPaymentMethodInOrderByPaymentDateAsc(
+                "SUBMITTED", manualPaymentMethods);
+
+        // Stripe payments that are APPROVED but have no receipt yet — accountant must generate receipt
+        List<Payment> stripePending = paymentRepository.findByStatusAndPaymentMethodInOrderByPaymentDateAsc(
+                "APPROVED", java.util.Arrays.asList("ONLINE_PAYMENT"))
                 .stream()
+                .filter(p -> p.getReceiptNumber() == null || p.getReceiptNumber().trim().isEmpty())
+                .collect(Collectors.toList());
+
+        // Merge both lists, manual first then Stripe
+        List<Payment> combined = new java.util.ArrayList<>();
+        combined.addAll(manualPending);
+        combined.addAll(stripePending);
+
+        return combined.stream()
                 .map(payment -> {
                     String studentName = payment.getEnrollment() != null && payment.getEnrollment().getStudent() != null
                             ? payment.getEnrollment().getStudent().getName()
@@ -38,7 +54,8 @@ public class AccountantPaymentService {
                             studentName,
                             courseName,
                             payment.getPaymentMethod(),
-                            payment.getPaymentDate());
+                            payment.getPaymentDate(),
+                            payment.getStatus());
                 }).collect(Collectors.toList());
     }
 
@@ -65,6 +82,11 @@ public class AccountantPaymentService {
                 dto.setCourseName(enrollment.getCourse().getTitle());
             }
         }
+        
+        dto.setStatus(payment.getStatus());
+        dto.setRejectionReason(payment.getRejectionReason());
+        dto.setReceiptNumber(payment.getReceiptNumber());
+        
         return dto;
     }
 
@@ -86,7 +108,7 @@ public class AccountantPaymentService {
 
         Enrollment enrollment = payment.getEnrollment();
         if (enrollment != null) {
-            enrollment.setStatus("APPROVED");
+            enrollment.setStatus("ACTIVE"); // Use ACTIVE for consistency
             if (enrollment.getStudent() != null) {
                 notificationService.createPaymentNotification(
                         enrollment.getStudent(),
@@ -135,24 +157,21 @@ public class AccountantPaymentService {
         paymentRepository.save(payment);
     }
 
-    public List<com.example.Phy6_Master.dto.AccountantPaymentHistoryResponseDTO> searchPayments(String status, String keyword) {
-        List<Payment> all;
-        if (status != null && !status.isEmpty()) {
-            all = paymentRepository.findByStatusOrderByPaymentDateAsc(status);
-        } else {
-            all = paymentRepository.findAll(); // simplified for now
-        }
+    public List<com.example.Phy6_Master.dto.AccountantPaymentHistoryResponseDTO> getFilteredPaymentHistory(
+            String studentName, String courseName, String paymentMethod, 
+            String status, LocalDateTime startDate, LocalDateTime endDate) {
         
-        return all.stream()
-            .filter(p -> {
-                if (keyword == null || keyword.isEmpty()) return true;
-                String lower = keyword.toLowerCase();
-                String sName = (p.getEnrollment() != null && p.getEnrollment().getStudent() != null) ? p.getEnrollment().getStudent().getName().toLowerCase() : "";
-                String cName = (p.getEnrollment() != null && p.getEnrollment().getCourse() != null) ? p.getEnrollment().getCourse().getTitle().toLowerCase() : "";
-                String ref = p.getReferenceNumber() != null ? p.getReferenceNumber().toLowerCase() : "";
-                return sName.contains(lower) || cName.contains(lower) || ref.contains(lower);
-            })
-            .sorted((p1, p2) -> p2.getPaymentDate().compareTo(p1.getPaymentDate()))
+        if (studentName == null) studentName = "";
+        if (courseName == null) courseName = "";
+        if (paymentMethod == null || paymentMethod.isEmpty() || paymentMethod.equals("ALL")) paymentMethod = "ALL";
+        if (status == null || status.isEmpty() || status.equals("ALL")) status = "ALL";
+        if (startDate == null) startDate = LocalDateTime.of(2000, 1, 1, 0, 0);
+        if (endDate == null) endDate = LocalDateTime.of(2100, 1, 1, 0, 0);
+
+        List<Payment> filteredPayments = paymentRepository.findPaymentsByFilters(
+                studentName, courseName, paymentMethod, status, startDate, endDate);
+        
+        return filteredPayments.stream()
             .map(p -> new com.example.Phy6_Master.dto.AccountantPaymentHistoryResponseDTO(
                     p.getId(),
                     p.getEnrollment() != null && p.getEnrollment().getStudent() != null ? p.getEnrollment().getStudent().getId() : null,
@@ -166,7 +185,8 @@ public class AccountantPaymentService {
                     p.getVerifiedBy() != null ? p.getVerifiedBy().getName() : null,
                     p.getPaymentDate(),
                     p.getVerifiedAt(),
-                    p.getRejectionReason()
+                    p.getRejectionReason(),
+                    p.getReceiptNumber()
             )).collect(Collectors.toList());
     }
 }
