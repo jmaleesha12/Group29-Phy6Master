@@ -49,6 +49,50 @@ const queryClient = new QueryClient({
 const App = () => {
   useTheme();
   return (
+
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Landing />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/classes" element={<Classes />} />
+            <Route path="/signin" element={<SignIn />} />
+            <Route path="/signup" element={<SignUp />} />
+            <Route path="/teacher" element={<TeacherLayout />}>
+              <Route path="dashboard" element={<TeacherDashboard />} />
+              <Route path="students" element={<Students />} />
+              <Route path="classes" element={<ClassManagement />} />
+              <Route path="content" element={<ContentUpload />} />
+              <Route path="timetable" element={<Timetable />} />
+              <Route path="announcements" element={<Announcements />} />
+              <Route index element={<Navigate to="dashboard" replace />} />
+            </Route>
+            <Route path="/student" element={<StudentLayout />}>
+              <Route index element={<Navigate to="dashboard" replace />} />
+              <Route path="dashboard" element={<Dashboard />} />
+              <Route path="resources" element={<Resources />} />
+              <Route path="classes" element={<StudentClasses />} />
+              <Route path="classes/:classId/payment" element={<PaymentPage />} />
+              <Route path="courses" element={<MyCourses />} />
+              <Route path="courses/:courseId" element={<CourseDetails />} />
+              <Route path="notifications" element={<NotificationsPage />} />
+              <Route path="schedule" element={<Schedule />} />
+              <Route path="settings" element={<SettingsPage />} />
+            </Route>
+            <Route path="/accountant" element={<AccountantLayout />}>
+              <Route index element={<Navigate to="payments" replace />} />
+              <Route path="payments" element={<PendingPaymentsList />} />
+              <Route path="payments/:paymentId" element={<PaymentVerificationDetail />} />
+            </Route>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Toaster />
@@ -89,6 +133,7 @@ const App = () => {
           </BrowserRouter>
         </TooltipProvider>
       </QueryClientProvider>
+
   );
 };
 

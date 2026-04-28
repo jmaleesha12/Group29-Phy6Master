@@ -62,7 +62,8 @@ public class CourseController {
             courseService.deleteCourse(id);
             return ResponseEntity.noContent().build();
         } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
+            e.printStackTrace();
+            return ResponseEntity.badRequest().build();
         }
     }
 
